@@ -24,39 +24,19 @@ speeches_data.set_index('date', inplace=True)
 
 # randomly select 10 row for test
 # df_sample = speeches_data.sample(n = 3)
-df_sample = speeches_data.tail(200)
+df_sample = speeches_data
 
 #%% Vectorizer
 from keyphrase_vectorizers import KeyphraseCountVectorizer
 pos_pattern = '<J.*>*<N.*>+'
 vectorizer = KeyphraseCountVectorizer(pos_pattern=pos_pattern)
 
-#%% KeyBERT
-from keybert import KeyBERT
+#%% Embedding model
+from sentence_transformers import SentenceTransformer,util
 
-def keyBERT_keyword(text,top_n):
-    kw_model = KeyBERT()
-    keywords = kw_model.extract_keywords(
-                      text,
-                      vectorizer=vectorizer,
-                      # use_maxsum=True,
-                       # use_mmr=True, 
-                      # diversity=0.7,
-                      # nr_candidates=20, 
-                      top_n=top_n)
-  
-    li_keywords = [pair[0] for pair in keywords] # keywords list without similarity value
-
-    return li_keywords
-
-def keyBERT_embedding(text):
-    kw_model = KeyBERT()
-    doc_embeddings, word_embeddings  = kw_model.extract_embeddings(
-        text,
-        candidates=None, 
-        stop_words='english', 
-        min_df=1, 
-        vectorizer=None)
+def embedding(text):
+    embedder = SentenceTransformer('all-MiniLM-L6-v2')
+    doc_embeddings = embedder.encode(text)
 
     return doc_embeddings
 
@@ -65,22 +45,22 @@ from numpy.linalg import norm
 
 def cosine_similarity_function(vec_1, vec_2):
     value = np.dot(vec_1, vec_2.T)/(norm(vec_1)*norm(vec_2))
-    return value[0][0]
+    return value
 
 #%% Variables
-search_word = 'recession'
+search_word = 'covid'
 
 #%% Main body
 import time
 start_time = time.time()
 print("program running")
 
-Search_word_embedding = keyBERT_embedding(search_word)
+Search_word_embedding = embedding(search_word)
 
 df_keywords = df_sample.copy()
 
 # df_keywords["keywords"] = df_keywords["text"].apply(lambda x: keyBERT_keyword(x ,10))
-df_keywords["text_embedding"] = df_keywords["text"].apply(lambda x: keyBERT_embedding(x))
+df_keywords["text_embedding"] = df_keywords["text"].apply(lambda x: embedding(x))
 
 # df_keywords["keywords_embedding"] = df_keywords["keywords"].apply(lambda x: keyBERT_embedding(x))
 df_keywords[search_word] = df_keywords["text_embedding"].apply(lambda x: cosine_similarity_function(x, Search_word_embedding))
