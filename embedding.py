@@ -66,7 +66,7 @@ df_keywords["text_embedding"] = df_keywords["text"].apply(lambda x: embedding(x)
 df_keywords[search_word] = df_keywords["text_embedding"].apply(lambda x: cosine_similarity_function(x, Search_word_embedding))
 
 print("program completed")
-print("--- %s seconds ---" % (time.time() - start_time))
+print("--- %s min ---" % (time.time() - start_time))/60
 
 #%% Post processing
 
@@ -91,3 +91,4 @@ plt.show()
 
 #%% Download
 df_output.to_excel("df_output.xlsx")
+df_keywords.to_excel("df_keywords.xlsx")
