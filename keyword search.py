@@ -54,7 +54,7 @@ search_word = 'crisis'
 effective_date_list = [
     [30,1],     # within next 30 day, full impact
     [90,0.25],   # within next 60 day, half impact
-    [180,0.1],  # within next 180 day, quarter impact
+    [180,0.1],  # within next 180 day, 1/10 impact
     ]
 min_threshold = 0.15
 power = 6
@@ -116,3 +116,7 @@ fig = px.line(
     title=search_word+" trend")
 
 fig.show()
+
+#%% Export
+
+df_output.to_excel("df_output.xlsx")
