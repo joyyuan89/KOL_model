@@ -30,9 +30,7 @@ def str2array(s):
     return np.array(ast.literal_eval(s))
 
 speeches_data['text_embedding'] = speeches_data['text_embedding'].apply(str2array)
-
-df_sample = speeches_data
-df_sample.set_index('date', inplace=True)
+speeches_data.set_index('date', inplace=True)
 
 
 #%% Embedding model
@@ -52,7 +50,7 @@ def cosine_similarity_function(vec_1, vec_2):
     return value
 
 #%% Variables
-search_word = 'recession'
+search_word = 'crisis'
 effective_date_list = [
     [30,1],     # within next 30 day, full impact
     [90,0.25],   # within next 60 day, half impact
@@ -63,7 +61,7 @@ power = 6
 
 #%% Main body
 Search_word_embedding = embedding(search_word)
-df_keywords = df_sample.copy()
+df_keywords = speeches_data.copy()
 df_keywords[search_word] = df_keywords["text_embedding"].apply(lambda x: cosine_similarity_function(x, Search_word_embedding))
 
 df_keywords_copy = df_keywords.copy()
@@ -78,7 +76,6 @@ def adjust_value(value):
     return value
 
 df_keywords[search_word] = df_keywords[search_word].apply(lambda x: adjust_value(x))
-
 
 # fill the date gaps
 date_range = pd.date_range(start=df_keywords.index.min(), end=df_keywords.index.max())
