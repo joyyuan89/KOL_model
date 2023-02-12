@@ -11,6 +11,7 @@ Created on Sat Feb 11 11:12:50 2023
 import pandas as pd
 import numpy as np
 import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import re
 import ast
 
@@ -50,10 +51,11 @@ def cosine_similarity_function(vec_1, vec_2):
     return value
 
 #%% Variables
-search_word = 'crisis'
+search_word = 'decouple'
 effective_date_list = [
-    [30,1],     # within next 30 day, full impact
-    [90,0.25],   # within next 60 day, half impact
+    [15,0.5],     # within next 15 day, full impact
+    [30,0.25],   # within next 30 day, half impact
+    [90,0.15],   # within next 90 day, quarter impact
     [180,0.1],  # within next 180 day, 1/10 impact
     ]
 min_threshold = 0.15
@@ -66,7 +68,6 @@ df_keywords[search_word] = df_keywords["text_embedding"].apply(lambda x: cosine_
 
 df_keywords_copy = df_keywords.copy()
 
-#%% Post processing
 # adjust similarity value
 def adjust_value(value):
     if value < min_threshold:
@@ -87,8 +88,8 @@ df_output["value"] = 0
 for i in effective_date_list:
     df_output["value"] += df_output[search_word].rolling(window=i[0], min_periods=1).sum()*i[1]
 
-#%% Plot
 import matplotlib.pyplot as plt
+plt.rcParams["figure.figsize"] = (10,6)
 
 x = df_output.index
 y = df_output["value"]
@@ -119,4 +120,4 @@ fig.show()
 
 #%% Export
 
-df_output.to_excel("df_output.xlsx")
+# df_output.to_excel("df_output.xlsx")
