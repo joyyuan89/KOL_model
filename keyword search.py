@@ -14,6 +14,7 @@ import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import re
 import ast
+import matplotlib.pyplot as plt
 
 # dir
 work_dir = os.getcwd()
@@ -62,15 +63,15 @@ def cosine_similarity_function(vec_1, vec_2):
 search_word_list = [
     'increasing inflation',
     'interest rate increase',
-    'banking crisis',
     'crisis',
     'economy recession',
     'crypto bitcoin',
     'rescue economy',
     'covid',
-    'oil price',
+    'commodity price',
+    'cost of living',
     'geopolitical conflict',
-    'affortable mortgage',
+    'mortgage affortability',
     ]
 
 # time decay
@@ -113,7 +114,7 @@ def main_loop(search_word, df_search_word, date_range):
     df_search_word[search_word] = df_search_word["text_embedding"].apply(lambda x: cosine_similarity_function(x, search_word_embedding))
     df_search_word[search_word] = df_search_word[search_word].apply(lambda x: adjust_value(x))
     
-    # re-index to daily frequency
+    # re-index to daily frequency and sum the values
     df_merged = pd.merge(
         date_range, 
         df_search_word, 
@@ -136,7 +137,6 @@ def main_loop(search_word, df_search_word, date_range):
     print(df_relevant)
     
     # plot
-    import matplotlib.pyplot as plt
     plt.rcParams["figure.figsize"] = (10,6)
     
     x = df_merged.index
@@ -152,9 +152,24 @@ def main_loop(search_word, df_search_word, date_range):
     return df_merged
 
 df_output = pd.DataFrame()
+
 for search_word in search_word_list:
     df_merged = main_loop(search_word, df_search_word, date_range)
     df_output = pd.concat([df_output, df_merged], axis=1)
+
+# plot summary chart
+n_col = 2
+width = n_col*10
+height = (int(len(search_word_list)/n_col)+1)*5
+plt.rcParams["figure.figsize"] = (width,height)
+fig, ax = plt.subplots(nrows=int(len(search_word_list)/n_col)+1, ncols=n_col)
+count = 0
+for search_word in search_word_list:
+    ax[int(count/n_col), count%n_col].plot(df_output.iloc[:, count*2+1])
+    ax[int(count/n_col), count%n_col].set_title(search_word)
+    count += 1
+
+plt.show()
 
 #%% Plotly
 '''
