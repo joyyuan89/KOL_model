@@ -38,7 +38,7 @@ print("program running")
 speeches_data["text_embedding"] = speeches_data["text"].apply(lambda x: embedding(x))
 
 print("program completed")
-print("--- %s min ---" % (time.time() - start_time))
+print("--- %s sec ---" % (time.time() - start_time))
 
 #%% Post processing
 
