@@ -44,8 +44,8 @@ print("--- %s min ---" % (time.time() - start_time))
 
 date_range = pd.date_range(start=speeches_data.index.min(), end=speeches_data.index.max(),freq='D')
 date_range = date_range.to_frame()
-df_output = pd.merge(speeches_data, date_range, left_index=True, right_index=True, how='outer')
-df_output.fillna(0,inplace=True)
+df_speech_embedding = pd.merge(speeches_data, date_range, left_index=True, right_index=True, how='outer')
+df_speech_embedding.fillna(0,inplace=True)
 
 #%% Download
-df_output.to_csv("df_output.csv")
+df_speech_embedding.to_excel("df_speech_embedding.xlsx")

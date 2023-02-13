@@ -33,7 +33,6 @@ def str2array(s):
 speeches_data['text_embedding'] = speeches_data['text_embedding'].apply(str2array)
 speeches_data.set_index('date', inplace=True)
 
-
 #%% Embedding model
 from sentence_transformers import SentenceTransformer
 
@@ -51,20 +50,20 @@ def cosine_similarity_function(vec_1, vec_2):
     return value
 
 #%% Variables
-search_word = 'decouple'
+search_word = 'rescue economy'
 effective_date_list = [
-    [15,0.5],     # within next 15 day, full impact
-    [30,0.25],   # within next 30 day, half impact
-    [90,0.15],   # within next 90 day, quarter impact
-    [180,0.1],  # within next 180 day, 1/10 impact
+    [15,0.5],       # within next 15 day, full impact
+    [30,0.25],      # within next 30 day, half impact
+    [90,0.15],      # within next 90 day, quarter impact
+    [180,0.1],      # within next 180 day, 1/10 impact
     ]
-min_threshold = 0.15
+min_threshold = 0.10
 power = 6
 
 #%% Main body
-Search_word_embedding = embedding(search_word)
+search_word_embedding = embedding(search_word)
 df_keywords = speeches_data.copy()
-df_keywords[search_word] = df_keywords["text_embedding"].apply(lambda x: cosine_similarity_function(x, Search_word_embedding))
+df_keywords[search_word] = df_keywords["text_embedding"].apply(lambda x: cosine_similarity_function(x, search_word_embedding))
 
 df_keywords_copy = df_keywords.copy()
 
@@ -82,12 +81,20 @@ df_keywords[search_word] = df_keywords[search_word].apply(lambda x: adjust_value
 date_range = pd.date_range(start=df_keywords.index.min(), end=df_keywords.index.max())
 date_range = date_range.to_frame()
 df_output = pd.merge(df_keywords, date_range, left_index=True, right_index=True, how='outer')
+df_output.fillna(0, inplace=True)
 
 # create value with time decay
 df_output["value"] = 0
 for i in effective_date_list:
     df_output["value"] += df_output[search_word].rolling(window=i[0], min_periods=1).sum()*i[1]
 
+# display top n relevant news
+df_relevant = df_output.loc[df_output[search_word] != 0]
+df_relevant = df_relevant.sort_values(by=[search_word], ascending=False).head(10)
+
+print(df_relevant)
+
+# plot
 import matplotlib.pyplot as plt
 plt.rcParams["figure.figsize"] = (10,6)
 
@@ -119,5 +126,4 @@ fig = px.line(
 fig.show()
 
 #%% Export
-
 # df_output.to_excel("df_output.xlsx")

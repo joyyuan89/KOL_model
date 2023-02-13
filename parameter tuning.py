@@ -9,7 +9,6 @@ Created on Sun Feb 12 13:42:20 2023
 
 # libraries
 import pandas as pd
-import numpy as np
 import os
 
 # dir
@@ -25,7 +24,6 @@ VIX_data = pd.read_csv(input_path_market_data, index_col=0)
 VIX_data.index = pd.to_datetime(VIX_data.index)
 
 #%% Merge data
-
 df_merged = pd.merge(df_output, VIX_data, left_index=True, right_index=True, how='inner')
 
 #%% Plot
