@@ -32,7 +32,16 @@ def str2array(s):
 
 speeches_data['text_embedding'] = speeches_data['text_embedding'].apply(str2array)
 speeches_data.set_index('date', inplace=True)
+
 df_keywords = speeches_data.copy()
+
+# fill the date gaps
+date_range = pd.date_range(start=df_keywords.index.min(), end=df_keywords.index.max())
+date_range = date_range.to_frame()
+df_output = pd.merge(df_keywords, date_range, left_index=True, right_index=True, how='outer')
+df_output.fillna(0, inplace=True)
+
+df_value = df_output.copy()
 
 #%% Embedding model
 from sentence_transformers import SentenceTransformer
@@ -55,6 +64,7 @@ def cosine_similarity_function(vec_1, vec_2):
 # search word list
 search_word_list = [
     'increasing inflation',
+    'interest rate increase',
     'banking crisis',
     'economy recession',
     'crypto bitcoin',
@@ -62,6 +72,7 @@ search_word_list = [
     'covid',
     'oil price',
     'geopolitical conflict',
+    'affortable mortgage',
     ]
 
 # time decay
@@ -95,7 +106,7 @@ def adjust_value(value):
     return value
 
 # main loop
-def main_loop(search_word, df_keywords):
+def main_loop(search_word, df_keywords, df_output):
 
     search_word_embedding = embedding(search_word)
 
@@ -109,13 +120,15 @@ def main_loop(search_word, df_keywords):
     df_output.fillna(0, inplace=True)
     
     # create value with time decay
-    df_output["value"] = 0
+    df_output[search_word+" value"] = 0
     for i in effective_date_list:
-        df_output["value"] += df_output[search_word].rolling(window=i[0], min_periods=1).sum()*i[1]
+        df_output[search_word+" value"] += df_output[search_word].rolling(window=i[0], min_periods=1).sum()*i[1]
+    
+    df_value[search_word+" value"] = df_output[search_word+" value"]
     
     # display top n relevant news
     df_relevant = df_output.loc[df_output[search_word] != 0]
-    df_relevant = df_relevant.sort_values(by=[search_word], ascending=False).head(10)
+    df_relevant = df_relevant.sort_values(by=[search_word], ascending=False).head(5)
     
     print(df_relevant)
     
@@ -124,7 +137,7 @@ def main_loop(search_word, df_keywords):
     plt.rcParams["figure.figsize"] = (10,6)
     
     x = df_output.index
-    y = df_output["value"]
+    y = df_output[search_word+" value"]
     
     plt.xlabel("Date")
     plt.ylabel(search_word+" value")
@@ -133,10 +146,10 @@ def main_loop(search_word, df_keywords):
     plt.plot(x, y)
     plt.show()
     
-    return df_output
+    return 
     
 for search_word in search_word_list:
-    df_output = main_loop(search_word, df_keywords)
+    main_loop(search_word, df_keywords, df_output)
     
 
 #%% Plotly
