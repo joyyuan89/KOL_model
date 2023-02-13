@@ -34,7 +34,7 @@ fig,ax_1 = plt.subplots()
 ax_2 = ax_1.twinx()
 
 x = df_merged.index
-y = df_merged["value"]
+y = df_merged["crisis value"]
 z = df_merged["Close"]
 
 ax_1.plot(x,y,label='Crisis level')

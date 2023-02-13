@@ -20,9 +20,9 @@ work_dir = os.getcwd()
 
 # load data
 input_path = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/central_bank_speech/all_speeches.xlsx"
-
 speeches_data = pd.read_excel(input_path)
 
+# convert embedding string to array
 def str2array(s):
     # Remove space after [
     s=re.sub('\[ +', '[', s.strip())
@@ -33,15 +33,12 @@ def str2array(s):
 speeches_data['text_embedding'] = speeches_data['text_embedding'].apply(str2array)
 speeches_data.set_index('date', inplace=True)
 
-df_keywords = speeches_data.copy()
+df_search_word = speeches_data.copy()
 
-# fill the date gaps
-date_range = pd.date_range(start=df_keywords.index.min(), end=df_keywords.index.max())
+# re-create date series
+date_range = pd.date_range(start=df_search_word.index.min(), end=df_search_word.index.max())
 date_range = date_range.to_frame()
-df_output = pd.merge(df_keywords, date_range, left_index=True, right_index=True, how='outer')
-df_output.fillna(0, inplace=True)
 
-df_value = df_output.copy()
 
 #%% Embedding model
 from sentence_transformers import SentenceTransformer
@@ -66,6 +63,7 @@ search_word_list = [
     'increasing inflation',
     'interest rate increase',
     'banking crisis',
+    'crisis',
     'economy recession',
     'crypto bitcoin',
     'rescue economy',
@@ -106,28 +104,33 @@ def adjust_value(value):
     return value
 
 # main loop
-def main_loop(search_word, df_keywords, df_output):
+def main_loop(search_word, df_search_word, date_range):
 
+    # search word embedding
     search_word_embedding = embedding(search_word)
 
-    df_keywords[search_word] = df_keywords["text_embedding"].apply(lambda x: cosine_similarity_function(x, search_word_embedding))
-    df_keywords[search_word] = df_keywords[search_word].apply(lambda x: adjust_value(x))
+    # calculate cosine similarity between search word and articles
+    df_search_word[search_word] = df_search_word["text_embedding"].apply(lambda x: cosine_similarity_function(x, search_word_embedding))
+    df_search_word[search_word] = df_search_word[search_word].apply(lambda x: adjust_value(x))
     
-    # fill the date gaps
-    date_range = pd.date_range(start=df_keywords.index.min(), end=df_keywords.index.max())
-    date_range = date_range.to_frame()
-    df_output = pd.merge(df_keywords, date_range, left_index=True, right_index=True, how='outer')
-    df_output.fillna(0, inplace=True)
+    # re-index to daily frequency
+    df_merged = pd.merge(
+        date_range, 
+        df_search_word, 
+        how='left',
+        left_index=True, 
+        right_index=True)
+
+    df_merged = df_merged.resample('D')[search_word].sum()
+    df_merged = df_merged.to_frame(search_word)
     
     # create value with time decay
-    df_output[search_word+" value"] = 0
+    df_merged[search_word+" value"] = 0
     for i in effective_date_list:
-        df_output[search_word+" value"] += df_output[search_word].rolling(window=i[0], min_periods=1).sum()*i[1]
-    
-    df_value[search_word+" value"] = df_output[search_word+" value"]
+        df_merged[search_word+" value"] += df_merged[search_word].rolling(window=i[0], min_periods=1).sum()*i[1]
     
     # display top n relevant news
-    df_relevant = df_output.loc[df_output[search_word] != 0]
+    df_relevant = df_merged.loc[df_merged[search_word] != 0]
     df_relevant = df_relevant.sort_values(by=[search_word], ascending=False).head(5)
     
     print(df_relevant)
@@ -136,8 +139,8 @@ def main_loop(search_word, df_keywords, df_output):
     import matplotlib.pyplot as plt
     plt.rcParams["figure.figsize"] = (10,6)
     
-    x = df_output.index
-    y = df_output[search_word+" value"]
+    x = df_merged.index
+    y = df_merged[search_word+" value"]
     
     plt.xlabel("Date")
     plt.ylabel(search_word+" value")
@@ -146,11 +149,12 @@ def main_loop(search_word, df_keywords, df_output):
     plt.plot(x, y)
     plt.show()
     
-    return 
-    
+    return df_merged
+
+df_output = pd.DataFrame()
 for search_word in search_word_list:
-    main_loop(search_word, df_keywords, df_output)
-    
+    df_merged = main_loop(search_word, df_search_word, date_range)
+    df_output = pd.concat([df_output, df_merged], axis=1)
 
 #%% Plotly
 '''
@@ -171,5 +175,5 @@ fig = px.line(
 fig.show()
 
 #%% Export
-# df_output.to_excel("df_output.xlsx")
+df_output.to_excel("df_output.xlsx")
 '''
