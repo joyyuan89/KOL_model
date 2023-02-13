@@ -32,6 +32,7 @@ def str2array(s):
 
 speeches_data['text_embedding'] = speeches_data['text_embedding'].apply(str2array)
 speeches_data.set_index('date', inplace=True)
+df_keywords = speeches_data.copy()
 
 #%% Embedding model
 from sentence_transformers import SentenceTransformer
@@ -51,13 +52,19 @@ def cosine_similarity_function(vec_1, vec_2):
 
 #%% Variables
 
+# search word list
 search_word_list = [
-    'higher inflation',
+    'increasing inflation',
     'banking crisis',
-    'crypto currency',
+    'economy recession',
+    'crypto bitcoin',
     'rescue economy',
+    'covid',
+    'oil price',
+    'geopolitical conflict',
     ]
 
+# time decay
 effective_date_list = [
     [15,0.10],
     [30,0.10],
@@ -71,10 +78,12 @@ effective_date_list = [
     [360,0.10],
     ]
 
+# threshold level
 min_threshold = 0.10
+
+# scaling factor
 power = 6
 
-df_keywords = speeches_data.copy()
 #%% Main body
 
 # adjust similarity value
@@ -128,6 +137,7 @@ def main_loop(search_word, df_keywords):
     
 for search_word in search_word_list:
     df_output = main_loop(search_word, df_keywords)
+    
 
 #%% Plotly
 '''
