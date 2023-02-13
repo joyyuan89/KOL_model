@@ -170,18 +170,22 @@ li_all_keywords = set(li_all_keywords) #dedup
 df1 = pd.DataFrame(li_all_keywords,columns = ["keyword"])
 df2 = pd.DataFrame(df1["keyword"].apply(embedding_word_func).to_list())
              
-df_keywords = pd.concat([df1,df2],axis =1)
+df_keywords = pd.concat([df1,df2],axis =1).set_index("keyword")
 
 # 3.2 kmeans
 
 clustering_model = KMeans(n_clusters=5)
-clustering_model.fit(df_keywords.iloc[:,1:]) # remove "keyword" column
+clustering_model.fit(df_keywords) # remove "keyword" column
 
+# update label of df_keywords 
+labels = clustering_model.fit_predict(df_keywords)
+
+# find cluster center
 centers = clustering_model.cluster_centers_
-labels = clustering_model.fit_predict(df_keywords.iloc[:,1:])
+df_sim = cosine_similarity(df_keywords, centers)
 
-# update df_speeches
-df_speeches['label'] = labels
+df_result = pd.concat([df1,pd.DataFrame(labels),pd.DataFrame(df_sim)],axis = 1)
+
 
 
 
