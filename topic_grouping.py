@@ -51,13 +51,7 @@ def embedding_word_func(word):
     embedding = model.encode(word)
     
     return embedding
-
-def decode_word_func(vector):
-    model = SentenceTransformer('all-MiniLM-L6-v2')
-    word = model.decode(vector)
-    
-    return word
-    
+  
 
 #%% 2. Keywords Extraction (cosine_similarity)
 
@@ -118,49 +112,107 @@ def keyBERT(doc,ngram_range, mss = False):
 
 #%% 4. word clustering
 
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, DBSCAN
+from sklearn.preprocessing import StandardScaler
 
-def kmeans_cluster(li_all_keywords, n_clusters=10):
+#4.1 kmeans
+
+def kmeans_cluster(li_corpus, li_embeddings = None, n_clusters=10):
+    #li_embeddings: list of arrays
+    #li_corpus: list of strs
     
-    df_keywords = pd.DataFrame(li_all_keywords,columns = ["keyword"])
-    df_keyword_embeddings = pd.DataFrame(df_keywords["keyword"].apply(embedding_word_func).to_list())
-                 
+    df_corpus = pd.DataFrame(li_corpus,columns = ["keyword"])
+    
+    if li_embeddings is None: # generate embeddings
+        df_embeddings = pd.DataFrame(df_corpus["keyword"].apply(embedding_word_func).to_list())
+    
+    else:
+        df_embeddings = pd.DataFrame(li_embeddings)   
+        
+                
     #kmeans
     clustering_model = KMeans(n_clusters)
-    clustering_model.fit(df_keyword_embeddings)
+    clustering_model.fit(df_embeddings)
     
     # find cluster center
     center_vectors = clustering_model.cluster_centers_
-    df_sim = pd.DataFrame(cosine_similarity(df_keyword_embeddings, center_vectors))
+    df_sim = pd.DataFrame(cosine_similarity(df_embeddings, center_vectors))
     
     # update label of df_keywords 
-    labels = clustering_model.fit_predict(df_keyword_embeddings)
-    df_labeled_keywords = pd.concat([df_keywords,pd.DataFrame(labels,columns = ["label"]),df_sim],axis = 1)
+    labels = clustering_model.fit_predict(df_embeddings)
+    df_labeled_corpus = pd.concat([df_corpus,pd.DataFrame(labels,columns = ["label"]),df_sim],axis = 1)
     
-    return df_labeled_keywords
+    return df_labeled_corpus
 
-def central_words(df_labeled_keywords,n_clusters = 10, n_words=10):
+#4.2 DBscan
+
+def dbscan_cluster(li_corpus, li_embeddings = None, eps = 0.3, min_samples = 10):
+    
+    df_corpus = pd.DataFrame(li_corpus,columns = ["keyword"])
+    
+    if li_embeddings is None: # generate embeddings
+        df_embeddings = pd.DataFrame(df_corpus["keyword"].apply(embedding_word_func).to_list())
+    
+    else:
+        df_embeddings = pd.DataFrame(li_embeddings) 
+        
+    # normalization ?
+    df_embeddings =  StandardScaler().fit_transform(df_embeddings)
+        
+    # DBscan
+    clustering_model = DBSCAN(eps = eps, min_samples = min_samples)
+    clustering_model.fit(df_embeddings)
+    labels = clustering_model.fit_predict(df_embeddings)
+    
+    # find cluster center
+    # Calculate the mean center of each cluster
+    unique_labels = set(labels)
+
+    centers = {}
+    for label in unique_labels:
+        if label != -1:
+            cluster = df_embeddings[clustering_model.labels_ == label]
+            center = np.mean(cluster, axis=0)
+            centers[label] = center
+        
+    center_vectors = pd.DataFrame(centers).T
+    df_sim = pd.DataFrame(cosine_similarity(df_embeddings, center_vectors))
+    
+    # update label of corpu and similarity to centers
+    df_labeled_corpus = pd.concat([df_corpus,pd.DataFrame(labels,columns = ["label"]),df_sim],axis = 1)
+    
+    return df_labeled_corpus 
+
+
+#4.3 find words near cluster centers
+
+def central_words(df_labeled_keywords, n_words=10):
     
     """
     df_labeled_keywords dataframe:
     columns: keyword label 0  1  2  3  4.... (similarity with each center)
     """
     
+    labels = df_labeled_keywords["label"].unique()
+    
     dic_topic_clusters = {}
-    for cluster in range(n_clusters):
-        df_cluster = df_labeled_keywords[df_labeled_keywords["label"] == cluster]
+    for label in labels:
+        df_cluster = df_labeled_keywords[df_labeled_keywords["label"] == label]
         # top n words in each cluster
-        li_central_words = df_cluster.sort_values(by = cluster, ascending=False)["keyword"].to_list()[0:n_words]
-        dic_topic_clusters[cluster] = li_central_words
+        li_central_words = df_cluster.sort_values(by = label, ascending=False)["keyword"].to_list()[0:n_words]
+        dic_topic_clusters[label] = li_central_words
     
     df_topic = pd.DataFrame(dic_topic_clusters)
         
     return df_topic
 
+
+
 """
 main body
 
 """
+
 #%%1.load data
 
 import pandas as pd
@@ -184,7 +236,7 @@ li_keyword_embeddings = []
 
 for doc in df_raw["text"]:
     keywords1, keyword_embeddings1 = keyBERT(doc=doc,ngram_range = (1,1), mss = False)
-    #keywords2, keyword_embeddings2 = keyBERT(doc=doc,ngram_range = (2,2), mss = True)
+    #keywords2, keyword_embeddings2 = keyBERT(doc=doc,ngram_range = (1,2), mss = True)
     
     li_keywords.append(keywords1)
     li_keyword_embeddings.append(keyword_embeddings1)
@@ -194,13 +246,20 @@ df_speeches = df_raw.copy()
 df_speeches['keywords'] = li_keywords
 df_speeches['keyword_embeddings'] = li_keyword_embeddings
 
-#%% 3.k-means
-
+#%% 3.clustering
 #flatten list and dedup
-li_all_keywords = li_all_keywords = set(list(np.concatenate(li_keywords).flat))
+li_all_keywords = set(list(np.concatenate(li_keywords).flat))
+#li_all_embeddings = [embedding for sublist in li_keyword_embeddings for embedding in sublist]
+#li_all_embeddings = list(set(map(tuple, li_all_embeddings)))
+#li_all_embeddings = [np.array(l) for l in li_all_embeddings]
 
-df_labeled_keywords = kmeans_cluster(li_all_keywords, n_clusters=10)
-df_topic = central_words(df_labeled_keywords,n_clusters = 10, n_words=10)
+#3.1 k-means
+#df_labeled_keywords = kmeans_cluster(li_corpus = li_all_keywords, n_clusters=10)
+#df_topic = central_words(df_labeled_keywords, n_words=2)
+
+#3.2 DBscan
+df_labeled_keywords = dbscan_cluster(li_corpus = li_all_keywords, eps = 3, min_samples = 2)
+df_topic = central_words(df_labeled_keywords, n_words=10)
               
 #%% 4.plot topic trend
 # key_word_search.py
@@ -208,6 +267,33 @@ df_topic = central_words(df_labeled_keywords,n_clusters = 10, n_words=10)
 #%% 5.plot topic trend
 df_speeches.to_csv(os.path.join(work_dir, "OUTPUT/keyword_embeddings.csv"))
 df_topic.to_csv(os.path.join(work_dir, "OUTPUT/topic_list.csv"))
+
+
+
+#%%
+    
+df_corpus = pd.DataFrame(li_all_keywords,columns = ["keyword"])
+df_embeddings = pd.DataFrame(df_corpus["keyword"].apply(embedding_word_func).to_list())
+df_embeddings =  StandardScaler().fit_transform(df_embeddings)
+clustering_model = DBSCAN(eps = 0.3, min_samples = 10)
+clustering_model.fit(df_embeddings)
+labels = clustering_model.fit_predict(df_embeddings)
+unique_labels = set(labels)
+
+    centers = {}
+    for label in unique_labels:
+        if label != -1:
+            cluster = df_embeddings[clustering_model.labels_ == label]
+            center = np.mean(cluster, axis=0)
+            centers[label] = center
+        
+    center_vectors = pd.DataFrame(centers).T
+    df_sim = pd.DataFrame(cosine_similarity(df_embeddings, center_vectors))
+    
+    # update label of corpu and similarity to centers
+    df_labeled_corpus = pd.concat([df_corpus,pd.DataFrame(labels,columns = ["label"]),df_sim],axis = 1)
+    
+    return df_labeled_corpus 
                    
 
 
