@@ -271,7 +271,7 @@ li_all_keywords = set(list(np.concatenate(li_keywords).flat))
 #3.1 k-means
 df_labeled_keywords = kmeans_cluster(li_corpus = li_all_keywords, n_clusters=10)
 #df_labeled_keywords = kmeans_cluster(li_corpus = li_all_keywords,li_embeddings=li_all_embeddings, n_clusters=10)
-df_topic_kmeans = central_words(df_labeled_keywords, n_words=5)
+df_topic_kmeans = central_words(df_labeled_keywords, n_words=20)
 
 #3.2 DBscan
 li_all_embeddings_2d = pca_func([embedding_word_func(word) for word in li_all_keywords])                              
@@ -280,7 +280,7 @@ df_labeled_keywords_db = dbscan_cluster(li_corpus = li_all_keywords,
                                       eps = 0.2, 
                                       min_samples = 5)
 
-df_topic_dbscan = central_words(df_labeled_keywords_db, n_words=10)
+df_topic_dbscan = central_words(df_labeled_keywords_db, n_words=5)
               
 #%% 4.visulization of DBscan
 # key_word_search.py
