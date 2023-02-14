@@ -3,3 +3,6 @@ INPUT/central_bank_speech/all_speeches.xlsx
 INPUT/central_bank_speech/all_speeches.csv
 INPUT/central_bank_speech/df_output.csv
 INPUT/central_bank_speech/Speech archives.zip
+OUTPUT/topic_list.csv
+topic_grouping.py
+OUTPUT/keyword_embeddings.csv
