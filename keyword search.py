@@ -61,17 +61,19 @@ def cosine_similarity_function(vec_1, vec_2):
 
 # search word list
 search_word_list = [
-    'increasing inflation',
-    'interest rate increase',
-    'crisis',
-    'economy recession',
-    'crypto bitcoin',
-    'rescue economy',
+    # 'increasing inflation',
+    # 'interest rate increase',
+    # 'crisis',
+    # 'economy recession',
+    # 'crypto bitcoin',
+    # 'digitalization',
+    # 'rescue economy',
     'covid',
     'commodity price',
     'cost of living',
     'geopolitical conflict',
     'mortgage affortability',
+    'disaster',
     ]
 
 # time decay
@@ -144,7 +146,7 @@ def main_loop(search_word, df_search_word, date_range):
     
     plt.xlabel("Date")
     plt.ylabel(search_word+" value")
-    plt.title(search_word+" trend")
+    plt.title(search_word)
     
     plt.plot(x, y)
     plt.show()
@@ -159,10 +161,11 @@ for search_word in search_word_list:
 
 # plot summary chart
 n_col = 2
-width = n_col*10
-height = (int(len(search_word_list)/n_col)+1)*5
-plt.rcParams["figure.figsize"] = (width,height)
-fig, ax = plt.subplots(nrows=int(len(search_word_list)/n_col)+1, ncols=n_col)
+width = n_col
+height = np.ceil(len(search_word_list)/n_col).astype(int)
+plt.rcParams["figure.figsize"] = (width*10,height*5)
+fig, ax = plt.subplots(nrows=height, ncols=width)
+
 count = 0
 for search_word in search_word_list:
     ax[int(count/n_col), count%n_col].plot(df_output.iloc[:, count*2+1])
