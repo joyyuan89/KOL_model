@@ -61,19 +61,21 @@ def cosine_similarity_function(vec_1, vec_2):
 
 # search word list
 search_word_list = [
-    # 'increasing inflation',
-    # 'interest rate increase',
-    # 'crisis',
-    # 'economy recession',
-    # 'crypto bitcoin',
-    # 'digitalization',
-    # 'rescue economy',
+    'increasing inflation',
+    'interest rate increase',
+    'crisis',
+    'economy recession',
+    'crypto bitcoin',
+    'digitalization',
+    'rescue economy',
     'covid',
     'commodity price',
     'cost of living',
     'geopolitical conflict',
     'mortgage affortability',
-    'disaster',
+    'quantitative easing',
+    'great depression',
+    'stagflation',
     ]
 
 # time decay
@@ -160,19 +162,22 @@ for search_word in search_word_list:
     df_output = pd.concat([df_output, df_merged], axis=1)
 
 # plot summary chart
-n_col = 2
-width = n_col
-height = np.ceil(len(search_word_list)/n_col).astype(int)
-plt.rcParams["figure.figsize"] = (width*10,height*5)
-fig, ax = plt.subplots(nrows=height, ncols=width)
-
-count = 0
-for search_word in search_word_list:
-    ax[int(count/n_col), count%n_col].plot(df_output.iloc[:, count*2+1])
-    ax[int(count/n_col), count%n_col].set_title(search_word)
-    count += 1
-
-plt.show()
+if len(search_word_list) > 2:
+    n_col = 2
+    width = n_col
+    height = np.ceil(len(search_word_list)/n_col).astype(int)
+    plt.rcParams["figure.figsize"] = (width*10,height*5)
+    fig, ax = plt.subplots(nrows=height, ncols=width)
+    
+    count = 0
+    for search_word in search_word_list:
+        ax[int(count/n_col), count%n_col].plot(df_output.iloc[:, count*2+1])
+        ax[int(count/n_col), count%n_col].set_title(search_word)
+        count += 1
+    
+    plt.show()
+else:
+    pass
 
 #%% Plotly
 '''
