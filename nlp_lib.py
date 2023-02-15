@@ -10,8 +10,8 @@ Created on Mon Feb 13 16:40:35 2023
 #%% 1. Doc & Word Embedding
 
 #Libraries for vectorization
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from keyphrase_vectorizers import KeyphraseCountVectorizer, KeyphraseTfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer #, TfidfVectorizer
+from keyphrase_vectorizers import KeyphraseCountVectorizer #, KeyphraseTfidfVectorizer
 #Libraries for embedding
 from sentence_transformers import SentenceTransformer
 
@@ -62,7 +62,7 @@ import itertools
 # for n_gram
 def extract_keywords(candidates, doc_embedding, candidate_embeddings, top_n = 5):
     
-    distances = cosine_similarity(doc_embedding, candidate_embeddings)
+    distances = cosine_similarity(doc_embedding, candidate_embeddings) #relevancy
     keywords = [candidates[index] for index in distances.argsort()[0][-top_n:]]
     keyword_embeddings = [candidate_embeddings[index] for index in distances.argsort()[0][-top_n:]]
     
@@ -95,18 +95,47 @@ def max_sum_sim( candidates, doc_embedding, candidate_embeddings, top_n =5, nr_c
 
     return keywords, keyword_embeddings
 
+"""
+def mmr(doc_embedding, word_embeddings, words, top_n, diversity):
+
+    # Extract similarity within words, and between words and the document
+    word_doc_similarity = cosine_similarity(word_embeddings, doc_embedding)
+    word_similarity = cosine_similarity(word_embeddings)
+
+    # Initialize candidates and already choose best keyword/keyphras
+    keywords_idx = [np.argmax(word_doc_similarity)]
+    candidates_idx = [i for i in range(len(words)) if i != keywords_idx[0]]
+
+    for _ in range(top_n - 1):
+        # Extract similarities within candidates and
+        # between candidates and selected keywords/phrases
+        candidate_similarities = word_doc_similarity[candidates_idx, :]
+        target_similarities = np.max(word_similarity[candidates_idx][:, keywords_idx], axis=1)
+
+        # Calculate MMR
+        mmr = (1-diversity) * candidate_similarities - diversity * target_similarities.reshape(-1, 1)
+        mmr_idx = candidates_idx[np.argmax(mmr)]
+
+        # Update keywords & candidates
+        keywords_idx.append(mmr_idx)
+        candidates_idx.remove(mmr_idx)
+
+    return [words[idx] for idx in keywords_idx]
+
+"""
+
 #%% 3. customized keyBERT
 
-def keyBERT(doc,ngram_range, mss = False):
+def keyBERT(doc, ngram_range, topN, nr_candidates = 10, use_mss = False,  model_name = 'all-MiniLM-L6-v2'):
     
     candidates = CountVectorizer_func(doc,ngram_range = ngram_range)
-    doc_embedding, candidate_embeddings = embedding_func(doc, candidates, model_name = 'all-MiniLM-L6-v2')
+    doc_embedding, candidate_embeddings = embedding_func(doc, candidates, model_name = model_name)
         
-    if mss is False:
+    if use_mss is False:
         keywords, keyword_embeddings = extract_keywords(candidates, doc_embedding, candidate_embeddings)
     
-    if mss is True:
-        keywords, keyword_embeddings = max_sum_sim( candidates, doc_embedding, candidate_embeddings, top_n =5, nr_candidates = 10)
+    if use_mss is True:
+        keywords, keyword_embeddings = max_sum_sim( candidates, doc_embedding, candidate_embeddings, top_n =topN, nr_candidates = nr_candidates)
 
     return keywords, keyword_embeddings
 
@@ -115,6 +144,7 @@ def keyBERT(doc,ngram_range, mss = False):
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.preprocessing import StandardScaler
+import pandas as pd
 
 #4.1 PCA
 
@@ -197,7 +227,7 @@ def dbscan_cluster(li_corpus, li_embeddings = None, eps = 0.3, min_samples = 10)
 
 #4.4 find words near cluster centers
 
-def central_words(df_labeled_keywords, n_words=10):
+def central_words(df_labeled_keywords, n_words=None):  
     
     """
     df_labeled_keywords dataframe:
@@ -211,126 +241,15 @@ def central_words(df_labeled_keywords, n_words=10):
         if label != -1: # -1 refers to noise in DBscan result
             df_cluster = df_labeled_keywords[df_labeled_keywords["label"] == label]
             # top n words in each cluster
-            li_central_words = df_cluster.sort_values(by = label, ascending=False)["keyword"].to_list()[0:n_words]
+            li_central_words = df_cluster.sort_values(by = label, ascending=False)["keyword"].to_list()
             dic_topic_clusters[label] = li_central_words
     
-    df_topic = pd.DataFrame(dic_topic_clusters)
+    #df_topic = pd.DataFrame(dic_topic_clusters)
+    df_topic = pd.DataFrame.from_dict(dic_topic_clusters, orient='index')
+    df_topic.columns = [f"word_{i}" for i in range(df_topic.shape[1])]
+    df_topic = df_topic.T.head(n_words).T if n_words is not None else df_topic
         
-    return df_topic
-
-
-
-"""
-main body
-
-"""
-
-#%%1.load data
-
-import pandas as pd
-import os
-
-# dir
-work_dir = os.getcwd()
-input_path = os.path.join(work_dir, "INPUT/central_bank_speech/all_speeches.csv")
-speeches_data = pd.read_csv(input_path)
-speeches_data["date"] = pd.to_datetime(speeches_data["date"],format="%d/%m/%Y")
-
-# selected latest 20 row for test
-df_raw = speeches_data.set_index("date").tail(500)
-
-# group by country, time window
-
-#%% 2.keyword extraction
-
-li_keywords = [] # list of (keywords list for each speech)
-li_keyword_embeddings = []
-
-for doc in df_raw["text"]:
-    keywords1, keyword_embeddings1 = keyBERT(doc=doc,ngram_range = (1,1), mss = False)
-    #keywords2, keyword_embeddings2 = keyBERT(doc=doc,ngram_range = (1,2), mss = True)
-    
-    li_keywords.append(keywords1)
-    li_keyword_embeddings.append(keyword_embeddings1)
-    
-# update df_speeches
-df_speeches = df_raw.copy()
-df_speeches['keywords'] = li_keywords
-df_speeches['keyword_embeddings'] = li_keyword_embeddings
-
-#%% 3.clustering
-
-#flatten list and dedup
-#length of li_all keywords and li_all_embeddings doesn't match?
-# set is unordered data structure!!!!
-li_all_keywords = set(list(np.concatenate(li_keywords).flat))
-#li_all_embeddings = [word for sublist in li_keywords for word in sublist]
-#li_all_embeddings = [embedding for sublist in li_keyword_embeddings for embedding in sublist]
-
-
-#3.1 k-means
-df_labeled_keywords = kmeans_cluster(li_corpus = li_all_keywords, n_clusters=10)
-#df_labeled_keywords = kmeans_cluster(li_corpus = li_all_keywords,li_embeddings=li_all_embeddings, n_clusters=10)
-df_topic_kmeans = central_words(df_labeled_keywords, n_words=20)
-
-#3.2 DBscan
-li_all_embeddings_2d = pca_func([embedding_word_func(word) for word in li_all_keywords])                              
-df_labeled_keywords_db = dbscan_cluster(li_corpus = li_all_keywords, 
-                                      li_embeddings=li_all_embeddings_2d,
-                                      eps = 0.2, 
-                                      min_samples = 5)
-
-df_topic_dbscan = central_words(df_labeled_keywords_db, n_words=5)
-              
-#%% 4.visulization of DBscan
-# key_word_search.py
-import matplotlib.pyplot as plt
-
-# plot the clusters
-df_plot = pd.DataFrame(li_all_embeddings_2d)
-pic3 = plt.scatter(df_plot[[0]], df_plot[[1]], c=df_labeled_keywords_db["label"], cmap='rainbow')
-    
-             
-#%% 5.save results
-df_speeches.to_csv(os.path.join(work_dir, "OUTPUT/keyword_embeddings.csv"))
-df_topic_kmeans.to_csv(os.path.join(work_dir, "OUTPUT/topic_list_kmeans.csv"))
-df_topic_dbscan.to_csv(os.path.join(work_dir, "OUTPUT/topic_list_dbscan.csv"))
-
-
-
-                   
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-        
-
-        
-
-        
-        
-
-
- 
-
-
-
-
-
-    
-    
-    
-
+    return df_topic.sort_index()
 
 
 

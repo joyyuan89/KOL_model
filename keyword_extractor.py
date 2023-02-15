@@ -9,14 +9,15 @@ Created on Wed Feb 15 11:30:07 2023
 import streamlit as st
 import numpy as np
 from pandas import DataFrame
-from keybert import KeyBERT
-# For Flair (Keybert)
-from flair.embeddings import TransformerDocumentEmbeddings
+import os
+import json
 import seaborn as sns
 # For download buttons
 from functionforDownloadButtons import download_button
-import os
-import json
+
+from nlp_lib import keyBERT
+
+
 
 st.set_page_config(
     page_title="BERT Keyword Extractor",
@@ -53,7 +54,7 @@ with st.expander("ℹ️ - About this app", expanded=True):
 
     st.write(
         """     
--   The *BERT Keyword Extractor* app is an easy-to-use interface built in Streamlit for the amazing [KeyBERT](https://github.com/MaartenGr/KeyBERT) library from Maarten Grootendorst!
+-   The *BERT Keyword Extractor* app is an easy-to-use interface built in Streamlit for extract keywors in central_bank_speech
 -   It uses a minimal keyword extraction technique that leverages multiple NLP embeddings and relies on [Transformers] (https://huggingface.co/transformers/) 🤗 to create keywords/keyphrases that are most similar to a document.
 	    """
     )
@@ -61,43 +62,31 @@ with st.expander("ℹ️ - About this app", expanded=True):
     st.markdown("")
 
 st.markdown("")
-st.markdown("## **📌 Paste document **")
+#st.markdown("## **📌 Paste document **")
+st.markdown("## **📌 Select Speech **")
+
 with st.form(key="my_form"):
 
 
     ce, c1, ce, c2, c3 = st.columns([0.07, 1, 0.07, 5, 0.07])
     with c1:
         ModelType = st.radio(
-            "Choose your model",
-            ["DistilBERT (Default)", "Flair"],
-            help="At present, you can choose between 2 models (Flair or DistilBERT) to embed your text. More to come!",
+            "Choose your embedding model",
+            #["DistilBERT (Default)", "Flair"],
+            ["all-MiniLM-L6-v2","distilbert-base-nli-mean-tokens"],
+            help="At present, you can choose between 2 pre_trained models to embed your text. More to come!",
         )
-
-        if ModelType == "Default (DistilBERT)":
-            # kw_model = KeyBERT(model=roberta)
-
-            @st.cache(allow_output_mutation=True)
-            def load_model():
-                return KeyBERT(model=roberta)
-
-            kw_model = load_model()
-
-        else:
-            @st.cache(allow_output_mutation=True)
-            def load_model():
-                return KeyBERT("distilbert-base-nli-mean-tokens")
-
-            kw_model = load_model()
 
         top_N = st.slider(
             "# of results",
             min_value=1,
             max_value=30,
-            value=10,
+            value=5,
             help="You can choose the number of keywords/keyphrases to display. Between 1 and 30, default number is 10.",
         )
         min_Ngrams = st.number_input(
             "Minimum Ngram",
+            value = 1,
             min_value=1,
             max_value=4,
             help="""The minimum value for the ngram range.
@@ -120,29 +109,25 @@ To extract keyphrases, simply set *keyphrase_ngram_range* to (1, 2) or higher de
 To extract keyphrases, simply set *keyphrase_ngram_range* to (1, 2) or higher depending on the number of words you would like in the resulting keyphrases.""",
         )
 
-        StopWordsCheckbox = st.checkbox(
-            "Remove stop words",
-            help="Tick this box to remove stop words from the document (currently English only)",
-        )
 
-        use_MMR = st.checkbox(
-            "Use MMR",
+        use_MSS = st.checkbox(
+            "Use MSS",
             value=True,
-            help="You can use Maximal Margin Relevance (MMR) to diversify the results. It creates keywords/keyphrases based on cosine similarity. Try high/low 'Diversity' settings below for interesting variations.",
+            help="You can use Max Sum Similarity (MSS) to diversify the results.",
         )
-
-        Diversity = st.slider(
+        
+        nr_candidates = st.slider(
             "Keyword diversity (MMR only)",
-            value=0.5,
-            min_value=0.0,
-            max_value=1.0,
-            step=0.1,
-            help="""The higher the setting, the more diverse the keywords.
+            value=10,
+            min_value=1,
+            max_value=30,
+            step=1,
+            help="""must be greater than topN.
             
-Note that the *Keyword diversity* slider only works if the *MMR* checkbox is ticked.
-
+Note that the *Keyword diversity* slider only works if the *MSS* checkbox is ticked.
 """,
         )
+
 
     with c2:
         doc = st.text_area(
@@ -165,15 +150,10 @@ Note that the *Keyword diversity* slider only works if the *MMR* checkbox is tic
 
         submit_button = st.form_submit_button(label="✨ Get me the data!")
 
-    if use_MMR:
-        mmr = True
+    if use_MSS:
+        mss = True
     else:
-        mmr = False
-
-    if StopWordsCheckbox:
-        StopWords = "english"
-    else:
-        StopWords = None
+        mss = False
 
 if not submit_button:
     st.stop()
@@ -181,33 +161,40 @@ if not submit_button:
 if min_Ngrams > max_Ngrams:
     st.warning("min_Ngrams can't be greater than max_Ngrams")
     st.stop()
+    
+if top_N > nr_candidates:
+    st.warning("top_N can't be greater than nr_candidates")
+    st.stop()
 
-keywords = kw_model.extract_keywords(
+keywords, keyword_embeddings = keyBERT(
     doc,
     keyphrase_ngram_range=(min_Ngrams, max_Ngrams),
-    use_mmr=mmr,
-    stop_words=StopWords,
-    top_n=top_N,
-    diversity=Diversity,
+    use_mss=mss,
+    nr_candidates = nr_candidates,
+    topN=top_N,
+    model_name = ModelType
 )
 
 st.markdown("## **🎈 Check & download results **")
 
 st.header("")
 
-cs, c1, c2, c3, cLast = st.columns([2, 1.5, 1.5, 1.5, 2])
+cs, c1, cLast = st.columns([2, 1.5, 2])
 
 with c1:
     CSVButton2 = download_button(keywords, "Data.csv", "📥 Download (.csv)")
 
 st.header("")
 
-df = (
-    DataFrame(keywords, columns=["Keyword/Keyphrase", "Relevancy"])
-    .sort_values(by="Relevancy", ascending=False)
-    .reset_index(drop=True)
-)
+#df = (
+#    DataFrame(keywords, columns=["Keyword/Keyphrase", "Relevancy"])
+#    .sort_values(by="Relevancy", ascending=False)
+#    .reset_index(drop=True)
+#)
 
+df = DataFrame(keywords)
+
+"""
 df.index += 1
 
 # Add styling
@@ -230,3 +217,4 @@ df = df.format(format_dictionary)
 
 with c2:
     st.table(df)
+"""

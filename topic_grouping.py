@@ -6,23 +6,11 @@ Created on Wed Feb 15 11:31:18 2023
 @author: jiayue.yuan
 """
 
-#%%
-#Libraries in nlp_lib
+#%%Libraries 
 import numpy as np
 import pandas as pd
 import os
-"""
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from keyphrase_vectorizers import KeyphraseCountVectorizer, KeyphraseTfidfVectorizer
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-import itertools
-from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans, DBSCAN
-from sklearn.preprocessing import StandardScaler
-"""
-
-# prepare lib
+import matplotlib.pyplot as plt
 
 from nlp_lib import keyBERT,embedding_word_func,kmeans_cluster,central_words,pca_func,dbscan_cluster
 
@@ -34,7 +22,7 @@ speeches_data = pd.read_csv(input_path)
 speeches_data["date"] = pd.to_datetime(speeches_data["date"],format="%d/%m/%Y")
 
 # selected latest 20 row for test
-df_raw = speeches_data.set_index("date").tail(500)
+df_raw = speeches_data.set_index("date").tail(10)
 
 # group by country, time window
 
@@ -69,9 +57,6 @@ df_labeled_keywords = kmeans_cluster(li_corpus = li_all_keywords, n_clusters=10)
 df_topic_kmeans = central_words(df_labeled_keywords, n_words=20)
             
 #%% 3.2DBscan
-# key_word_search.py
-import matplotlib.pyplot as plt
-
 #DBscan
 li_all_embeddings_2d = pca_func([embedding_word_func(word) for word in li_all_keywords])                              
 df_labeled_keywords_db = dbscan_cluster(li_corpus = li_all_keywords, li_embeddings=li_all_embeddings_2d, eps = 0.2, min_samples = 5)
