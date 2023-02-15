@@ -22,6 +22,7 @@ from nlp_lib import keyBERT
 st.set_page_config(
     page_title="BERT Keyword Extractor",
     page_icon="🎈",
+    layout="wide",
 )
 
 
