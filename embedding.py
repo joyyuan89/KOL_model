@@ -9,6 +9,8 @@ Created on Sat Feb 11 11:12:50 2023
 
 # libraries
 import pandas as pd
+from tqdm import tqdm
+tqdm.pandas()
 import os
 
 # dir
@@ -21,11 +23,19 @@ speeches_data = pd.read_csv(input_path)
 speeches_data['date'] = pd.to_datetime(speeches_data['date'], format="%d/%m/%Y")
 speeches_data.set_index('date', inplace=True)
 
+# sampling for test
+# speeches_data = speeches_data.sample(10)
+
 #%% Embedding model
 from sentence_transformers import SentenceTransformer
 
+# embedder_name = 'multi-qa-mpnet-base-dot-v1' # heavy weight semantic search
+# embedder_name = 'multi-qa-MiniLM-L6-cos-v1' # light weight semantic search
+embedder_name = 'all-MiniLM-L6-v2' # light weight all-rounder
+# embedder_name = 'all-mpnet-base-v2' # heavy weight all-rounder
+
 def embedding(text):
-    embedder = SentenceTransformer('all-MiniLM-L6-v2')
+    embedder = SentenceTransformer(embedder_name)
     doc_embeddings = embedder.encode(text)
 
     return doc_embeddings
@@ -35,17 +45,10 @@ import time
 start_time = time.time()
 print("program running")
 
-speeches_data["text_embedding"] = speeches_data["text"].apply(lambda x: embedding(x))
+speeches_data["text_embedding"] = speeches_data["text"].progress_apply(lambda x: embedding(x))
 
 print("program completed")
 print("--- %s sec ---" % (time.time() - start_time))
 
-#%% Post processing
-
-date_range = pd.date_range(start=speeches_data.index.min(), end=speeches_data.index.max(),freq='D')
-date_range = date_range.to_frame()
-df_speech_embedding = pd.merge(speeches_data, date_range, left_index=True, right_index=True, how='outer')
-df_speech_embedding.fillna(0,inplace=True)
-
 #%% Download
-df_speech_embedding.to_excel("df_speech_embedding.xlsx")
+speeches_data.to_excel(embedder_name+"_embedding.xlsx")
