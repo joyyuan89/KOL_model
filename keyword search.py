@@ -19,8 +19,12 @@ import matplotlib.pyplot as plt
 # dir
 work_dir = os.getcwd()
 
+# embedder name
+# embedder_name = 'multi-qa-MiniLM-L6-cos-v1'
+embedder_name = 'all-MiniLM-L6-v2'
+
 # load data
-input_path = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/central_bank_speech/all_speeches.xlsx"
+input_path = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/central_bank_speech/"+embedder_name+"_embedding.xlsx"
 speeches_data = pd.read_excel(input_path)
 
 # convert embedding string to array
@@ -45,7 +49,7 @@ date_range = date_range.to_frame()
 from sentence_transformers import SentenceTransformer
 
 def embedding(text):
-    embedder = SentenceTransformer('all-MiniLM-L6-v2')
+    embedder = SentenceTransformer(embedder_name)
     doc_embeddings = embedder.encode(text)
 
     return doc_embeddings
@@ -62,18 +66,13 @@ def cosine_similarity_function(vec_1, vec_2):
 # search word list
 search_word_list = [
     'increasing inflation',
-    'interest rate increase',
-    'crisis',
-    'economy recession',
-    'crypto bitcoin',
-    'digitalization',
-    'rescue economy',
-    'covid',
+    'raise interest rate',
     'commodity price',
-    'cost of living',
-    'geopolitical conflict',
+    'crypto bitcoin',
+    'recession',
     'mortgage affortability',
     'quantitative easing',
+    'geopolitical conflict',
     'great depression',
     'stagflation',
     ]
