@@ -1,4 +1,5 @@
 #%% Setup
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -24,8 +25,12 @@ work_dir = os.getcwd()
 embedder_name = 'all-MiniLM-L6-v2'
 
 # load data
-input_path = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/central_bank_speech/"+embedder_name+"_embedding.xlsx"
-speeches_data = pd.read_excel(input_path)
+input_path_data = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/central_bank_speech/"+embedder_name+"_embedding.xlsx"
+speeches_data = pd.read_excel(input_path_data)
+input_path_ref = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/reference_tables/weight.xlsx"
+reference_table = pd.read_excel(input_path_ref, sheet_name="Country")
+
+speeches_data = pd.merge(speeches_data, reference_table, on="country", how="inner")
 
 # convert embedding string to array
 def str2array(s):
@@ -44,8 +49,9 @@ df_search_word = speeches_data.copy()
 date_range = pd.date_range(start=df_search_word.index.min(), end=df_search_word.index.max())
 date_range = date_range.to_frame()
 
+#%% Function list
 
-#%% Embedding model
+# embedding model
 from sentence_transformers import SentenceTransformer
 
 def embedding(text):
@@ -54,7 +60,7 @@ def embedding(text):
 
     return doc_embeddings
 
-#%% Cosine similarity
+# cosine similarity
 from numpy.linalg import norm
 
 def cosine_similarity_function(vec_1, vec_2):
@@ -97,6 +103,9 @@ min_threshold = 0.10
 # scaling factor
 power = 6
 
+individual_plot = False
+summary_plot = True
+
 #%% Main body
 
 # adjust similarity value
@@ -116,6 +125,7 @@ def main_loop(search_word, df_search_word, date_range):
     # calculate cosine similarity between search word and articles
     df_search_word[search_word] = df_search_word["text_embedding"].apply(lambda x: cosine_similarity_function(x, search_word_embedding))
     df_search_word[search_word] = df_search_word[search_word].apply(lambda x: adjust_value(x))
+    df_search_word[search_word] = df_search_word[search_word]*df_search_word["country_weight"]
     
     # re-index to daily frequency and sum the values
     df_merged = pd.merge(
@@ -138,19 +148,21 @@ def main_loop(search_word, df_search_word, date_range):
     df_relevant = df_relevant.sort_values(by=[search_word], ascending=False).head(5)
     
     print(df_relevant)
-    
-    # plot
-    plt.rcParams["figure.figsize"] = (10,6)
-    
-    x = df_merged.index
-    y = df_merged[search_word+" value"]
-    
-    plt.xlabel("Date")
-    plt.ylabel(search_word+" value")
-    plt.title(search_word)
-    
-    plt.plot(x, y)
-    plt.show()
+
+    # plot individual plot
+    if individual_plot:    
+        
+        plt.rcParams["figure.figsize"] = (10,6)
+        
+        x = df_merged.index
+        y = df_merged[search_word+" value"]
+        
+        plt.xlabel("Date")
+        plt.ylabel(search_word+" value")
+        plt.title(search_word)
+        
+        plt.plot(x, y)
+        plt.show()
     
     return df_merged
 
@@ -161,22 +173,24 @@ for search_word in search_word_list:
     df_output = pd.concat([df_output, df_merged], axis=1)
 
 # plot summary chart
-if len(search_word_list) > 2:
-    n_col = 2
-    width = n_col
-    height = np.ceil(len(search_word_list)/n_col).astype(int)
-    plt.rcParams["figure.figsize"] = (width*10,height*5)
-    fig, ax = plt.subplots(nrows=height, ncols=width)
-    
-    count = 0
-    for search_word in search_word_list:
-        ax[int(count/n_col), count%n_col].plot(df_output.iloc[:, count*2+1])
-        ax[int(count/n_col), count%n_col].set_title(search_word)
-        count += 1
-    
-    plt.show()
-else:
-    pass
+if summary_plot:
+
+    if len(search_word_list) > 2:
+        n_col = 2
+        width = n_col
+        height = np.ceil(len(search_word_list)/n_col).astype(int)
+        plt.rcParams["figure.figsize"] = (width*10,height*5)
+        fig, ax = plt.subplots(nrows=height, ncols=width)
+        
+        count = 0
+        for search_word in search_word_list:
+            ax[int(count/n_col), count%n_col].plot(df_output.iloc[:, count*2+1])
+            ax[int(count/n_col), count%n_col].set_title(search_word)
+            count += 1
+        
+        plt.show()
+    else:
+        pass
 
 #%% Plotly
 '''
