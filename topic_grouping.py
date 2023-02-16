@@ -11,6 +11,9 @@ import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+from keybert import KeyBERT
+from keyphrase_vectorizers import KeyphraseCountVectorizer
+
 
 from nlp_lib import keyBERT,embedding_word_func,kmeans_cluster,central_words,pca_func,dbscan_cluster
 
@@ -33,11 +36,16 @@ li_keyword_embeddings = []
 
 for doc in df_raw["text"]:
     keywords1, keyword_embeddings1 = keyBERT(doc=doc,ngram_range = (1,1), mss = False)
-    #keywords2, keyword_embeddings2 = keyBERT(doc=doc,ngram_range = (1,2), mss = True)
+    
     
     li_keywords.append(keywords1)
     li_keyword_embeddings.append(keyword_embeddings1)
     
+#%%
+vectorizer = KeyphraseCountVectorizer()
+kw_model.extract_keywords(doc, vectorizer=vectorizer)
+    
+#%%
 # update df_speeches
 df_speeches = df_raw.copy()
 df_speeches['keywords'] = li_keywords
