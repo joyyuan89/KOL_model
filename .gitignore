@@ -8,3 +8,4 @@ topic_grouping.py
 OUTPUT/keyword_embeddings.csv
 INPUT/central_bank_speech/all-MiniLM-L6-v2_embedding.xlsx
 INPUT/central_bank_speech/multi-qa-MiniLM-L6-cos-v1_embedding.xlsx
+INPUT/central_bank_speech/all-mpnet-base-v2_embedding.xlsx
