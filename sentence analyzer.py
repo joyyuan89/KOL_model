@@ -31,7 +31,7 @@ speeches_data.set_index('date', inplace=True)
 speeches_data.dropna(inplace=True)
 
 # sampling for test
-speeches_data = speeches_data.sample(25)
+speeches_data = speeches_data.sample(20)
 
 # scaled df for plotting
 sentences_df = pd.DataFrame()
@@ -75,11 +75,11 @@ for i in range(len(speeches_data)):
     
     # embedding
     start_time = time.time()
-    print("program running"+" loop number "+i)
+    print("program running"+" loop number "+str(i))
 
     sentences["text_embedding"] = sentences["text"].progress_apply(lambda x: embedding(x))
 
-    print("program completed"+" loop number "+i)
+    print("program completed"+" loop number "+str(i))
     print("--- %s sec ---" % (time.time() - start_time))
 
     sentences_copy = sentences.copy()
@@ -115,7 +115,12 @@ for i in range(len(speeches_data)):
 import matplotlib.pyplot as plt
 
 plt.rcParams["figure.figsize"] = (10,6)
-sentences_df["mean"].plot(kind="line")
+sentences_df["mean"].plot(
+    kind="line",
+    xlabel="position in article: 0-start, 100-end",
+    ylabel="similarity_value",
+    title="Sentence importance level in a article"
+    )
 
 #%% Clustering
 
