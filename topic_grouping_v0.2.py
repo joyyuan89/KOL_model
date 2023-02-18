@@ -24,8 +24,11 @@ work_dir = os.getcwd()
 input_path = os.path.join(work_dir, "INPUT/central_bank_speech/all_speeches.csv")
 speeches_data = pd.read_csv(input_path)
 speeches_data["date"] = pd.to_datetime(speeches_data["date"],format="%d/%m/%Y")
-# selected US speeches
+
+#%%selected US speeches from 2018
+
 df_raw = speeches_data[speeches_data["country"] == "united states"]
+df_raw = df_raw[df_raw["date"]>"2012-01-01"]
 df_raw.sort_values("date",inplace = True)
 df_raw.reset_index(drop = True, inplace = True)
 df_raw.index.rename('speech_no', inplace=True) 
@@ -33,7 +36,7 @@ df_raw.index.rename('speech_no', inplace=True)
 #%% keywords extraction
 sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
 kw_model = KeyBERT(model=sentence_model)
-vectorizer = CountVectorizer(ngram_range= (1,2), stop_words="english")
+vectorizer = CountVectorizer(ngram_range= (1,1), stop_words="english")
 # n-gram越小，越概括
 df_speeches_kw = df_raw[["country","text","date"]]
 df_speeches_kw["result"] = df_raw['text'].apply(lambda x : kw_model.extract_keywords(x, vectorizer=vectorizer,top_n=10,use_mmr = True,diversity = 0.5))
@@ -58,7 +61,7 @@ df4["keyword_no"] = range(df4.shape[0]) #set keyword_index
 
 #dedup and clustering (to find mapping relationship: keyword>>>topic)
 li_keywords = set(df4['keyword'].to_list())
-df_labeled_keywords = kmeans_cluster(li_corpus = li_keywords, n_clusters=30)
+df_labeled_keywords = kmeans_cluster(li_corpus = li_keywords, n_clusters=20)
 df_topic_kmeans = central_words(df_labeled_keywords) #to save 
 
 #%% topic labeling (date, keyword, topic, country, sim)
@@ -73,6 +76,8 @@ df_keywords = df_keywords_temp2.merge(df_mapping, on = "label")
 
 #%%topic trend 
 #time decay
+
+
 
 #%% save results
 #1. US speeches with speech_no
