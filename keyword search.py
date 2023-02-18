@@ -71,16 +71,27 @@ def cosine_similarity_function(vec_1, vec_2):
 
 # search word list
 search_word_list = [
-    'increasing inflation',
-    'raise interest rate',
-    'commodity price',
+    # external shock
+    'pandemic',
+    'wars',
+    # crypto currencies
     'crypto bitcoin',
-    'recession',
-    'mortgage affortability',
+    'blockchain',
+    # banking crisis
+    'liquidation',
+    'banking crisis',
+    # monetary policy
     'quantitative easing',
-    'geopolitical conflict',
-    'great depression',
-    'stagflation',
+    'raise interest rate',
+    # inflation
+    'inflation',
+    'shortage',
+    # housing market
+    'mortgage',
+    'housing market',
+    # globalization
+    'globalization',
+    'tariff',
     ]
 
 # time decay
@@ -103,7 +114,7 @@ min_threshold = 0.10
 # scaling factor
 power = 6
 
-individual_plot = False
+individual_plot = True
 summary_plot = True
 
 #%% Main body
