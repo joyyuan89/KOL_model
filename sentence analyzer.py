@@ -17,6 +17,7 @@ from tqdm import tqdm
 tqdm.pandas()
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+import time
 
 # dir
 work_dir = os.getcwd()
@@ -27,18 +28,13 @@ input_path = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/central_bank_speech/
 speeches_data = pd.read_csv(input_path)
 speeches_data['date'] = pd.to_datetime(speeches_data['date'], format="%d/%m/%y")
 speeches_data.set_index('date', inplace=True)
+speeches_data.dropna(inplace=True)
 
 # sampling for test
-speeches_data = speeches_data.sample(1)
+speeches_data = speeches_data.sample(25)
 
-text = speeches_data['text'][0]
-
-doc = nlp(text)
-sentences = pd.DataFrame([sent.text.strip() for sent in doc.sents])
-sentences.columns = ['text']
-sentences.iloc[-1] = speeches_data['text']
-
-print(sentences)
+# scaled df for plotting
+sentences_df = pd.DataFrame()
 
 #%% Embedding model
 from sentence_transformers import SentenceTransformer
@@ -54,18 +50,6 @@ def embedding(text):
 
     return doc_embeddings
 
-#%% Embedding
-import time
-start_time = time.time()
-print("program running")
-
-sentences["text_embedding"] = sentences["text"].progress_apply(lambda x: embedding(x))
-
-print("program completed")
-print("--- %s sec ---" % (time.time() - start_time))
-
-sentences_copy = sentences.copy()
-
 #%% Cosine similarity
 from numpy.linalg import norm
 
@@ -73,44 +57,65 @@ def cosine_similarity_function(vec_1, vec_2):
     value = np.dot(vec_1, vec_2.T)/(norm(vec_1)*norm(vec_2))
     return value
 
-#%% Calculate similarity value
+#%% Main loop
 
 # scaling factor
 power = 4
 rolling_window = 6
 
-sentences = sentences_copy
+# main loop
+for i in range(len(speeches_data)):
 
-sentences["similarity_value"] = sentences["text_embedding"].apply(
-    lambda x: cosine_similarity_function(
-    x, sentences.iloc[-1, sentences.columns.get_loc("text_embedding")]))
-sentences = sentences[:-1]
+    text = speeches_data['text'][i]
+    
+    doc = nlp(text)
+    sentences = pd.DataFrame([sent.text.strip() for sent in doc.sents])
+    sentences.columns = ['text']
+    sentences.iloc[-1] = speeches_data['text'][i]
+    
+    # embedding
+    start_time = time.time()
+    print("program running"+" loop number "+i)
 
-sentences = sentences.copy()
-sentences.loc[:,"similarity_value_pwr"] = sentences.loc[:,"similarity_value"].pow(power)
-sentences.loc[:,"similarity_value_adj"] = sentences.loc[:,"similarity_value_pwr"].rolling(
-    window=rolling_window,
-    min_periods=1,
-    center=True,
-    ).mean()
+    sentences["text_embedding"] = sentences["text"].progress_apply(lambda x: embedding(x))
 
-# normalize to 0-1 range
-sentences.loc[:,"similarity_value_scaled"] = (sentences["similarity_value_adj"]-sentences["similarity_value_adj"].min())/(sentences["similarity_value_adj"].max()-sentences["similarity_value_adj"].min())
+    print("program completed"+" loop number "+i)
+    print("--- %s sec ---" % (time.time() - start_time))
 
-#%% Plot
+    sentences_copy = sentences.copy()
+    
+    # calculate similarity value
+    sentences = sentences_copy
+    
+    sentences["similarity_value"] = sentences["text_embedding"].apply(
+        lambda x: cosine_similarity_function(
+        x, sentences.iloc[-1, sentences.columns.get_loc("text_embedding")]))
+    sentences = sentences[:-1]
+    
+    sentences = sentences.copy()
+    sentences.loc[:,"similarity_value_pwr"] = sentences.loc[:,"similarity_value"].pow(power)
+    sentences.loc[:,"similarity_value_adj"] = sentences.loc[:,"similarity_value_pwr"].rolling(
+        window=rolling_window,
+        min_periods=1,
+        center=True,
+        ).mean()
+    
+    # normalize to 0-1 range
+    sentences.loc[:,"similarity_value_scaled"] = (sentences["similarity_value_adj"]-sentences["similarity_value_adj"].min())/(sentences["similarity_value_adj"].max()-sentences["similarity_value_adj"].min())
+
+    # re-index
+    sentences.index = 100*(sentences.index-sentences.index.min())/(sentences.index.max()-sentences.index.min())
+    index_list = range(100)
+    sentences_df[i] = sentences["similarity_value_scaled"].reindex(index_list, method='nearest')
+    
+    # get mean
+    sentences_df["mean"] = sentences_df.mean(axis=1)
+
+#%% Plotting
 import matplotlib.pyplot as plt
 
 plt.rcParams["figure.figsize"] = (10,6)
-
-x = sentences.index
-y = sentences["similarity_value_scaled"]
-
-plt.xlabel("Sentence position")
-plt.ylabel("similarity_value")
-plt.title("Sentence analysis")
-
-plt.plot(x, y)
-plt.show()
+sentences_df["mean"].plot(kind="line")
 
 #%% Clustering
 
