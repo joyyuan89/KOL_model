@@ -31,8 +31,8 @@ from sentence_transformers import SentenceTransformer
 
 # embedder_name = 'multi-qa-mpnet-base-dot-v1' # heavy weight semantic search
 # embedder_name = 'multi-qa-MiniLM-L6-cos-v1' # light weight semantic search
-embedder_name = 'all-MiniLM-L6-v2' # light weight all-rounder
-# embedder_name = 'all-mpnet-base-v2' # heavy weight all-rounder
+# embedder_name = 'all-MiniLM-L6-v2' # light weight all-rounder
+embedder_name = 'all-mpnet-base-v2' # heavy weight all-rounder
 
 def embedding(text):
     embedder = SentenceTransformer(embedder_name)
