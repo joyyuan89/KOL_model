@@ -22,11 +22,11 @@ work_dir = os.getcwd()
 
 # embedder name
 # embedder_name = 'multi-qa-MiniLM-L6-cos-v1'
-embedder_name = "all-MiniLM-L6-v2"
-# embedder_name = 'all-mpnet-base-v2' # heavy weight all-rounder
+# embedder_name = "all-MiniLM-L6-v2"
+embedder_name = 'all-mpnet-base-v2' # heavy weight all-rounder
 
 # full or shortened text
-tag = "shortened"
+tag = "full"
 
 # load data
 input_path_data = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/central_bank_speech/"+embedder_name+"_embedding_"+tag+".xlsx"
@@ -78,9 +78,15 @@ search_word_list = [
     # external shock
     'pandemic',
     'wars',
+    # economy
+    'recession',
+    'labor market',
     # crypto currencies
     'crypto bitcoin',
     'blockchain',
+    # fiscal policy
+    'stimulus plan',
+    'fiscal tools',
     # banking crisis
     'liquidation',
     'banking crisis',
@@ -88,7 +94,7 @@ search_word_list = [
     'quantitative easing',
     'raise interest rate',
     # inflation
-    'inflation',
+    'rising inflation',
     'shortage',
     # housing market
     'mortgage',
@@ -187,7 +193,8 @@ for search_word in search_word_list:
     df_merged = main_loop(search_word, df_search_word, date_range)
     df_output = pd.concat([df_output, df_merged], axis=1)
 
-# plot summary chart
+#%% plot summary chart
+
 if summary_plot:
 
     if len(search_word_list) > 2:
@@ -208,11 +215,11 @@ if summary_plot:
         pass
 
 #%% Plotly
-'''
+    
+'''    
 import plotly.express as px
 import plotly.io as pio
 pio.renderers.default = 'browser'
-#pio.renderers.default = 'svg'
 
 x = df_output.index
 y = df_output["value"]
@@ -225,5 +232,6 @@ fig = px.line(
 
 fig.show()
 '''
+
 #%% Export
 df_output.to_excel("df_output.xlsx")
