@@ -64,6 +64,7 @@ df4["keyword_no"] = range(df4.shape[0]) #set keyword_index
 li_keywords = set(df4['keyword'].to_list())
 df_labeled_keywords = kmeans_cluster(li_corpus = li_keywords, n_clusters=20)
 df_topic_kmeans = central_words(df_labeled_keywords) #to save 
+test = df_topic_kmeans.T
 
 #%% topic labeling (date, keyword, topic, country, sim)
 
@@ -83,7 +84,7 @@ df_keywords = df_keywords_temp2.merge(df_mapping, on = "label")
 #%% save results
 #1. US speeches with speech_no
 df_speeches_kw.to_csv(os.path.join(work_dir, "OUTPUT/central_bank_speech/all_speeches_with_keywords_v0.2.csv"))
-df_topic_kmeans.to_csv(os.path.join(work_dir, "OUTPUT/central_bank_speech/keywords_groupping_n2_v0.2.csv"))
+df_topic_kmeans.T.to_csv(os.path.join(work_dir, "OUTPUT/central_bank_speech/keywords_groupping_n2_v0.2.csv"))
 df_keywords.to_csv(os.path.join(work_dir, "OUTPUT/central_bank_speech/keywords_time_series_n2_v0.2.csv"))
 
 
