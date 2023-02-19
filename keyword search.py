@@ -124,7 +124,7 @@ min_threshold = 0.10
 # scaling factor
 power = 6
 
-individual_plot = False
+individual_plot = True
 summary_plot = True
 
 #%% Main body
