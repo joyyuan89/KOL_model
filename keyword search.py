@@ -23,9 +23,10 @@ work_dir = os.getcwd()
 # embedder name
 # embedder_name = 'multi-qa-MiniLM-L6-cos-v1'
 embedder_name = "all-MiniLM-L6-v2"
+# embedder_name = 'all-mpnet-base-v2' # heavy weight all-rounder
 
 # full or shortened text
-tag = "full"
+tag = "shortened"
 
 # load data
 input_path_data = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/central_bank_speech/"+embedder_name+"_embedding_"+tag+".xlsx"
@@ -223,7 +224,6 @@ fig = px.line(
     title=search_word+" trend")
 
 fig.show()
-
+'''
 #%% Export
 df_output.to_excel("df_output.xlsx")
-'''
