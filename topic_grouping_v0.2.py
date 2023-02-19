@@ -36,14 +36,15 @@ df_raw.index.rename('speech_no', inplace=True)
 #%% keywords extraction
 sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
 kw_model = KeyBERT(model=sentence_model)
-vectorizer = CountVectorizer(ngram_range= (1,1), stop_words="english")
+vectorizer = CountVectorizer(ngram_range= (2,2), stop_words="english")
 # n-gram越小，越概括
 df_speeches_kw = df_raw[["country","text","date"]]
 df_speeches_kw["result"] = df_raw['text'].apply(lambda x : kw_model.extract_keywords(x, vectorizer=vectorizer,top_n=10,use_mmr = True,diversity = 0.5))
+df_speeches_kw["result2"] = df_raw['text'].apply(lambda x : kw_model.extract_keywords(x, vectorizer=vectorizer,top_n=10,use_mmr = True,diversity = 0.5))
 
 #%%
 
-df1 = pd.DataFrame(df_speeches_kw["result"].to_list(),columns =[f"k{i}" for i in range(10)])
+df1 = pd.DataFrame(df_speeches_kw["result2"].to_list(),columns =[f"k{i}" for i in range(10)])
 df1.index = df_speeches_kw.index
 df2 = pd.concat([df1["k0"],df1["k1"],df1["k2"],df1["k3"],df1["k4"],df1["k5"],df1["k6"],df1["k7"],df1["k8"],df1["k9"]]).to_frame()
 df2.sort_index(inplace = True)
@@ -82,8 +83,8 @@ df_keywords = df_keywords_temp2.merge(df_mapping, on = "label")
 #%% save results
 #1. US speeches with speech_no
 df_speeches_kw.to_csv(os.path.join(work_dir, "OUTPUT/central_bank_speech/all_speeches_with_keywords_v0.2.csv"))
-df_topic_kmeans.to_csv(os.path.join(work_dir, "OUTPUT/central_bank_speech/keywords_groupping_v0.2.csv"))
-df_keywords.to_csv(os.path.join(work_dir, "OUTPUT/central_bank_speech/keywords_time_series_v0.2.csv"))
+df_topic_kmeans.to_csv(os.path.join(work_dir, "OUTPUT/central_bank_speech/keywords_groupping_n2_v0.2.csv"))
+df_keywords.to_csv(os.path.join(work_dir, "OUTPUT/central_bank_speech/keywords_time_series_n2_v0.2.csv"))
 
 
 
