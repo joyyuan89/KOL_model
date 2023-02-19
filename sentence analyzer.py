@@ -31,7 +31,7 @@ speeches_data.set_index('date', inplace=True)
 speeches_data.dropna(inplace=True)
 
 # sampling for test
-speeches_data = speeches_data.sample(20)
+speeches_data = speeches_data.sample(10)
 
 # scaled df for plotting
 sentences_df = pd.DataFrame()

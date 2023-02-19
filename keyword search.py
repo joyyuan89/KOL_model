@@ -22,10 +22,13 @@ work_dir = os.getcwd()
 
 # embedder name
 # embedder_name = 'multi-qa-MiniLM-L6-cos-v1'
-embedder_name = 'all-MiniLM-L6-v2'
+embedder_name = "all-MiniLM-L6-v2"
+
+# full or shortened text
+tag = "full"
 
 # load data
-input_path_data = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/central_bank_speech/"+embedder_name+"_embedding.xlsx"
+input_path_data = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/central_bank_speech/"+embedder_name+"_embedding_"+tag+".xlsx"
 speeches_data = pd.read_excel(input_path_data)
 input_path_ref = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/reference_tables/weight.xlsx"
 reference_table = pd.read_excel(input_path_ref, sheet_name="Country")
@@ -114,7 +117,7 @@ min_threshold = 0.10
 # scaling factor
 power = 6
 
-individual_plot = True
+individual_plot = False
 summary_plot = True
 
 #%% Main body
