@@ -7,7 +7,7 @@ Created on Mon Feb 13 13:46:53 2023
 """
 
 
-# import streamlit as st
+#import streamlit as st
 
 # libraries
 import pandas as pd
@@ -16,15 +16,28 @@ import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import re
 import ast
+import matplotlib.pyplot as plt
 
 # dir
 work_dir = os.getcwd()
 
+# embedder name
+# embedder_name = 'multi-qa-MiniLM-L6-cos-v1'
+embedder_name = "all-MiniLM-L6-v2"
+#embedder_name = 'all-mpnet-base-v2' # heavy weight all-rounder
+
+# full or shortened text
+tag = "full"
+
 # load data
-input_path = os.path.join("INPUT/central_bank_speech/all_speeches.xlsx")
+input_path_data = "/Users/jiayue.yuan/Desktop/Github/KOL_model/INPUT/central_bank_speech/"+embedder_name+"_embedding_"+tag+".xlsx"
+speeches_data = pd.read_excel(input_path_data)
+input_path_ref = "/Users/jiayue.yuan/Desktop/Github/KOL_model/INPUT/reference_tables/weight.xlsx"
+reference_table_country = pd.read_excel(input_path_ref, sheet_name="country")
 
-speeches_data = pd.read_excel(input_path)
+speeches_data = pd.merge(speeches_data, reference_table_country, on="country", how="inner")
 
+# convert embedding string to array
 def str2array(s):
     # Remove space after [
     s=re.sub('\[ +', '[', s.strip())
@@ -35,17 +48,24 @@ def str2array(s):
 speeches_data['text_embedding'] = speeches_data['text_embedding'].apply(str2array)
 speeches_data.set_index('date', inplace=True)
 
+df_search_word = speeches_data.copy()
 
-#%% Embedding model
+# re-create date series
+date_range = pd.date_range(start=df_search_word.index.min(), end=df_search_word.index.max())
+date_range = date_range.to_frame()
+
+#%% Function list
+
+# embedding model
 from sentence_transformers import SentenceTransformer
 
 def embedding(text):
-    embedder = SentenceTransformer('all-MiniLM-L6-v2')
+    embedder = SentenceTransformer(embedder_name)
     doc_embeddings = embedder.encode(text)
 
     return doc_embeddings
 
-#%% Cosine similarity
+# cosine similarity
 from numpy.linalg import norm
 
 def cosine_similarity_function(vec_1, vec_2):
@@ -53,22 +73,35 @@ def cosine_similarity_function(vec_1, vec_2):
     return value
 
 #%% Variables
-search_word = 'decouple'
+
+# search word list
+
+reference_table_topic_list = pd.read_excel(input_path_ref, sheet_name="topic list")
+
+# time decay
 effective_date_list = [
-    [15,0.5],     # within next 15 day, full impact
-    [30,0.25],   # within next 30 day, half impact
-    [90,0.15],   # within next 90 day, quarter impact
-    [180,0.1],  # within next 180 day, 1/10 impact
+    [15,0.10],
+    [30,0.10],
+    [45,0.10],
+    [60,0.10],
+    [90,0.10],
+    [120,0.10],
+    [150,0.10],
+    [180,0.10],
+    [270,0.10],
+    [360,0.10],
     ]
-min_threshold = 0.15
+
+# threshold levelcolorscales
+min_threshold = 0.10
+
+# scaling factor
 power = 6
 
-#%% Main body
-Search_word_embedding = embedding(search_word)
-df_keywords = speeches_data.copy()
-df_keywords[search_word] = df_keywords["text_embedding"].apply(lambda x: cosine_similarity_function(x, Search_word_embedding))
+individual_plot = True
+summary_plot = True
 
-df_keywords_copy = df_keywords.copy()
+#%% Main body
 
 # adjust similarity value
 def adjust_value(value):
@@ -78,47 +111,139 @@ def adjust_value(value):
     
     return value
 
-df_keywords[search_word] = df_keywords[search_word].apply(lambda x: adjust_value(x))
+# main loop
+def main_loop(search_word, df_search_word, date_range):
 
-# fill the date gaps
-date_range = pd.date_range(start=df_keywords.index.min(), end=df_keywords.index.max())
-date_range = date_range.to_frame()
-df_output = pd.merge(df_keywords, date_range, left_index=True, right_index=True, how='outer')
+    # search word embedding
+    search_word_embedding = embedding(search_word)
 
-# create value with time decay
-df_output["value"] = 0
-for i in effective_date_list:
-    df_output["value"] += df_output[search_word].rolling(window=i[0], min_periods=1).sum()*i[1]
+    # calculate cosine similarity between search word and articles
+    df_search_word[search_word] = df_search_word["text_embedding"].apply(lambda x: cosine_similarity_function(x, search_word_embedding))
+    df_search_word[search_word] = df_search_word[search_word].apply(lambda x: adjust_value(x))
+    df_search_word[search_word] = df_search_word[search_word]*df_search_word["country_weight"]
+    
+    # re-index to daily frequency and sum the values
+    df_merged = pd.merge(
+        date_range, 
+        df_search_word, 
+        how='left',
+        left_index=True, 
+        right_index=True)
 
-#%% Plot
+    df_merged = df_merged.resample('D')[search_word].sum()
+    df_merged = df_merged.to_frame(search_word)
+    
+    # create value with time decay
+    df_merged[search_word+" value"] = 0
+    for i in effective_date_list:
+        df_merged[search_word+" value"] += df_merged[search_word].rolling(window=i[0], min_periods=1).sum()*i[1]
+    
+    # display top n relevant news
+    df_relevant = df_merged.loc[df_merged[search_word] != 0]
+    df_relevant = df_relevant.sort_values(by=[search_word], ascending=False).head(5)
+    
+    print(df_relevant)
 
-import matplotlib.pyplot as plt
-plt.rcParams["figure.figsize"] = (10,6)
+    # plot individual plot
+    if individual_plot:    
+        
+        plt.rcParams["figure.figsize"] = (10,6)
+        
+        x = df_merged.index
+        y = df_merged[search_word+" value"]
+        
+        plt.xlabel("Date")
+        plt.ylabel(search_word+" value")
+        plt.title(search_word)
+        
+        plt.plot(x, y)
+        plt.show()
+    
+    return df_merged
 
-x = df_output.index
-y = df_output["value"]
+df_output = pd.DataFrame()
 
-plt.xlabel("Date")
-plt.ylabel(search_word+" value")
-plt.title(search_word+" trend")
+for search_word in reference_table_topic_list["child topics"]:
+    df_merged = main_loop(search_word, df_search_word, date_range)
+    df_output = pd.concat([df_output, df_merged], axis=1)
 
-plt.plot(x, y)
-plt.show()
+#%% plot summary chart
+
+if summary_plot:
+
+    if len(reference_table_topic_list["child topics"]) > 2:
+        n_col = 2
+        width = n_col
+        height = np.ceil(len(reference_table_topic_list["child topics"])/n_col).astype(int)
+        plt.rcParams["figure.figsize"] = (width*10,height*5)
+        fig, ax = plt.subplots(nrows=height, ncols=width)
+        
+        count = 0
+        for search_word in reference_table_topic_list["child topics"]:
+            ax[int(count/n_col), count%n_col].plot(df_output.iloc[:, count*2+1])
+            ax[int(count/n_col), count%n_col].set_title(search_word)
+            count += 1
+        
+        plt.show()
+    else:
+        pass
 
 #%% Plotly
+    
+'''    
 import plotly.express as px
 import plotly.io as pio
 pio.renderers.default = 'browser'
-#pio.renderers.default = 'svg'
-
 x = df_output.index
 y = df_output["value"]
-
 fig = px.line(
     df_output, 
     x=df_output.index, 
     y = df_output["value"],
     title=search_word+" trend")
-
 fig.show()
+'''
 
+#%% Export
+df_output.to_excel("df_output.xlsx")
+
+#%% Treemap
+
+df = df_output.iloc[:,1::2]
+df.columns = df_output.iloc[:,::2].columns
+
+# get today's value
+df_today = df.sort_index().tail(1).unstack()
+df_today.reset_index(level = -1,drop = True, inplace = True )
+
+# adjusted index (in 10 years from 2012-01-01)
+df_selected = df.loc[df.index >= "2012-01-01"]
+
+df_adjusted = ((df_selected -df_selected.min())/(df_selected.max() - df_selected.min())).tail(1).T
+df_result = pd.concat([df_today,df_adjusted],axis = 1)
+df_result.reset_index(inplace = True)
+df_result.columns = ["child topics", "value","adj_value"]
+df_result_final = pd.merge(df_result, 
+                      reference_table_topic_list, 
+                      on ='child topics', 
+                      how ='inner')
+
+# plot treemap
+import plotly.express as px
+import plotly.io as pio
+pio.renderers.default = 'browser'
+
+# create a treemap of the data using Plotly
+fig = px.treemap(df_result_final, 
+                 path=[px.Constant('Market topics'), 'parent topics', 'child topics'],
+                 values='value',
+                 color='adj_value', 
+                 #color_continuous_scale='RdBu_r',
+                  color_continuous_scale='oranges',
+                 hover_data={'value':':.2f', 'adj_value':':d'})
+
+# show the treemap
+#fig.update_layout(margin = dict(t=50, l=25, r=25, b=25))
+
+fig.update_layout(font_size=20,font_family="Open Sans",font_color="#444")
+fig.show()

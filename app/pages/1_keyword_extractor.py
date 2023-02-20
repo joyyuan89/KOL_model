@@ -43,27 +43,22 @@ _max_width_()
 
 #%% load data 
 
-#@st.cache
-#def load_data(url):
-#    df = pd.read_csv(url)
-#    df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
-#    return df
+# Read in data from local.
+@st.cache
+def load_data(local_path):
+    df = pd.read_csv(local_path)
+    df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
+    return df
 
-
-
+df = pd.read_csv("/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv")
 
 # Read in data from the Google Sheet.
-@st.cache()
-def load_data(sheets_url):
-    csv_url = sheets_url.replace("/edit#gid=", "/export?format=csv&gid=")
-    return pd.read_csv(csv_url)
+# @st.cache()
+# def load_data(sheets_url):
+#     csv_url = sheets_url.replace("/edit#gid=", "/export?format=csv&gid=")
+#     return pd.read_csv(csv_url)
 
-df = load_data(st.secrets["public_gsheets_url"])
-df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
-
-
-
-#df = pd.read_csv("/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv")
+#df = load_data(st.secrets["public_gsheets_url"])
 #df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
 
 #%% select a speech
