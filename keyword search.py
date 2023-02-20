@@ -74,9 +74,9 @@ def cosine_similarity_function(vec_1, vec_2):
 #%% Variables
 
 # search word list
-<<<<<<< Updated upstream
+
 reference_table_topic_list = pd.read_excel(input_path_ref, sheet_name="topic list")
-=======
+
 search_word_list = [
     # external shock
     'pandemic',
@@ -102,7 +102,6 @@ search_word_list = [
     # globalization
     'globalization',
     ]
->>>>>>> Stashed changes
 
 # time decay
 effective_date_list = [
