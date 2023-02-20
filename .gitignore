@@ -1,1 +1,2 @@
 INPUT/**
+app/secrets.toml
