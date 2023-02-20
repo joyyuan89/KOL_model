@@ -81,6 +81,7 @@ for i in range(len(speeches_data)):
 
     print("program completed"+" loop number "+str(i))
     print("--- %s sec ---" % (time.time() - start_time))
+    print("/n")
 
     sentences_copy = sentences.copy()
     
@@ -108,19 +109,29 @@ for i in range(len(speeches_data)):
     index_list = range(100)
     sentences_df[i] = sentences["similarity_value_scaled"].reindex(index_list, method='nearest')
     
-    # get mean
+    # get mean and std
     sentences_df["mean"] = sentences_df.mean(axis=1)
+    sentences_df["mean+std"] = sentences_df.mean(axis=1)+sentences_df.std(axis=1)
+    sentences_df["mean-std"] = sentences_df.mean(axis=1)-sentences_df.std(axis=1)    
 
 #%% Plotting
 import matplotlib.pyplot as plt
 
 plt.rcParams["figure.figsize"] = (10,6)
-sentences_df["mean"].plot(
+sentences_df.plot(
     kind="line",
+    y=["mean", "mean+std", "mean-std"],
     xlabel="position in article: 0-start, 100-end",
     ylabel="similarity_value",
     title="Sentence importance level in a article"
     )
+
+#%% Plotly
+
+import plotly.express as px
+
+fig = px.line(sentences_df, x=sentences_df.index, y=["mean", "mean+std", "mean-std"])
+fig.show()
 
 #%% Clustering
 
