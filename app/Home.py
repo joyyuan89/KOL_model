@@ -36,7 +36,20 @@ the app can extract keywords from speech text, plot trends of market narratives.
 
 st.markdown("# Home Page 🎈")
 
-st.markdown("1.introduction")
-st.markdown("2.keyword search")
-st.markdown("3.topic trend")
-st.markdown("4.topic treemap")
+#1.introduction
+st.markdown("### 1.Introduction")
+st.markdown("Market narrative is a good indicator for market trend......")
+
+#2. guide for keyword extractor
+st.markdown("### 2.Keyword extractor")
+st.markdown(" First, select a speech you want to view. Then keywords extraction options like embedding model......")
+
+#3.
+st.markdown("### 3.Topic trend")
+
+st.markdown("#### >> 2.1 Search topics and view trends")
+st.markdown(" You can search a single topics or compare multiple topics' trends")
+
+st.markdown("#### >> 2.2 topic popularity treemap")
+st.markdown(" This treemap shows the most hot topic nowadays......")
+
