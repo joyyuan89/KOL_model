@@ -43,8 +43,17 @@ _max_width_()
 
 #%% sidebar a speech
 
-df = pd.read_csv("/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv")
-df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
+@st.cache
+def load_data(url):
+    df = pd.read_csv(url)
+    df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
+    return df
+
+df = load_data("/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv")
+
+#df = pd.read_csv("/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv")
+#df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
+
 
 # Create a select box for the country column
 selected_country = st.sidebar.selectbox("Select country", df["country"].unique(), index = 7)
@@ -94,6 +103,7 @@ st.header(title)
 with st.expander("📔 -full text", expanded=True):
 
     st.markdown(doc)
+    
    
 #%% key word extractor
 
