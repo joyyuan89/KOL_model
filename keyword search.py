@@ -225,6 +225,7 @@ df.columns = df_output.iloc[:,::2].columns
 # get today's value
 df_today = df.sort_index().tail(1).unstack()
 df_today.reset_index(level = -1,drop = True, inplace = True )
+df_today.mask(df_today < 0, 0.001, inplace=True)
 
 # adjusted index (in 10 years from 2012-01-01)
 df_selected = df.loc[df.index >= "2012-01-01"]
@@ -233,8 +234,10 @@ df_adjusted = ((df_selected -df_selected.min())/(df_selected.max() - df_selected
 df_result = pd.concat([df_today,df_adjusted],axis = 1)
 df_result.reset_index(inplace = True)
 df_result.columns = ["child topics", "value","adj_value"]
+
+parent_topics = reference_table_topic_list.drop_duplicates(subset="child topics")
 df_result_final = pd.merge(df_result, 
-                      reference_table_topic_list, 
+                      parent_topics, 
                       on ='child topics', 
                       how ='inner')
 
