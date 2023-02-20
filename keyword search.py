@@ -97,7 +97,7 @@ min_threshold = 0.10
 # scaling factor
 power = 6
 
-individual_plot = True
+individual_plot = False
 summary_plot = True
 
 #%% Main body
@@ -111,7 +111,7 @@ def adjust_value(value):
     return value
 
 # main loop
-def main_loop(search_word, df_search_word, date_range):
+def main_loop(search_word, search_word_group, polarity, df_search_word, date_range):
 
     # search word embedding
     search_word_embedding = embedding(search_word)
@@ -158,31 +158,39 @@ def main_loop(search_word, df_search_word, date_range):
         plt.plot(x, y)
         plt.show()
     
+    # apply polarity
+    df_merged = df_merged * polarity
+    
+    # apply topic group
+    df_merged.columns = [search_word_group, search_word_group+" value"]
+    
     return df_merged
 
 df_output = pd.DataFrame()
 
-for search_word in reference_table_topic_list["child topics"]:
-    df_merged = main_loop(search_word, df_search_word, date_range)
+for i in range(len(reference_table_topic_list)):
+    search_word = reference_table_topic_list["child topics questions"][i]
+    search_word_group = reference_table_topic_list["child topics"][i]
+    polarity = reference_table_topic_list["polarity"][i]
+    df_merged = main_loop(search_word, search_word_group, polarity, df_search_word, date_range)
     df_output = pd.concat([df_output, df_merged], axis=1)
 
+df_output = df_output.groupby(level=0, axis=1).sum()
 #%% plot summary chart
 
 if summary_plot:
 
-    if len(reference_table_topic_list["child topics"]) > 2:
+    if len(df_output.columns) > 2:
         n_col = 2
         width = n_col
-        height = np.ceil(len(reference_table_topic_list["child topics"])/n_col).astype(int)
+        height = np.ceil(len(df_output.columns)/n_col).astype(int)
         plt.rcParams["figure.figsize"] = (width*10,height*5)
         fig, ax = plt.subplots(nrows=height, ncols=width)
         
-        count = 0
-        for search_word in reference_table_topic_list["child topics"]:
-            ax[int(count/n_col), count%n_col].plot(df_output.iloc[:, count*2+1])
-            ax[int(count/n_col), count%n_col].set_title(search_word)
-            count += 1
-        
+        for i in range(len(df_output.columns)):
+            ax[int(i/n_col),i%n_col].plot(df_output.iloc[:,i])
+            ax[int(i/n_col),i%n_col].set_title(df_output.columns[i])
+
         plt.show()
     else:
         pass

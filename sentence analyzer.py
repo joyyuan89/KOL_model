@@ -31,7 +31,7 @@ speeches_data.set_index('date', inplace=True)
 speeches_data.dropna(inplace=True)
 
 # sampling for test
-speeches_data = speeches_data.sample(10)
+speeches_data = speeches_data.sample(3)
 
 # scaled df for plotting
 sentences_df = pd.DataFrame()
@@ -60,8 +60,8 @@ def cosine_similarity_function(vec_1, vec_2):
 #%% Main loop
 
 # scaling factor
-power = 4
-rolling_window = 6
+power = 2
+rolling_window = 4
 
 # main loop
 for i in range(len(speeches_data)):
@@ -76,31 +76,35 @@ for i in range(len(speeches_data)):
     # embedding
     start_time = time.time()
     print("program running"+" loop number "+str(i))
-
     sentences["text_embedding"] = sentences["text"].progress_apply(lambda x: embedding(x))
-
     print("program completed"+" loop number "+str(i))
     print("--- %s sec ---" % (time.time() - start_time))
-    print("/n")
-
-    sentences_copy = sentences.copy()
+    print()
     
-    # calculate similarity value
-    sentences = sentences_copy
-    
+    # similarity against the entire doc
     sentences["similarity_value"] = sentences["text_embedding"].apply(
         lambda x: cosine_similarity_function(
         x, sentences.iloc[-1, sentences.columns.get_loc("text_embedding")]))
+    
+    # pair-wise similarity matrix (can be used to segregate paragraphs in future)
+    # similarity_matrix = pd.DataFrame()
+    # for j in range(len(sentences)):    
+    #     similarity_matrix[j] = sentences["text_embedding"].apply(
+    #     lambda x: cosine_similarity_function(
+    #     x, sentences.iloc[j, sentences.columns.get_loc("text_embedding")]))
+    # sentences["similarity_value"] = similarity_matrix.mean(axis=1)
+
+    sentences = sentences.copy()
     sentences = sentences[:-1]
     
-    sentences = sentences.copy()
+    # value adjustment
     sentences.loc[:,"similarity_value_pwr"] = sentences.loc[:,"similarity_value"].pow(power)
     sentences.loc[:,"similarity_value_adj"] = sentences.loc[:,"similarity_value_pwr"].rolling(
         window=rolling_window,
         min_periods=1,
         center=True,
         ).mean()
-    
+
     # normalize to 0-1 range
     sentences.loc[:,"similarity_value_scaled"] = (sentences["similarity_value_adj"]-sentences["similarity_value_adj"].min())/(sentences["similarity_value_adj"].max()-sentences["similarity_value_adj"].min())
 

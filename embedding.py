@@ -46,7 +46,7 @@ tag = "full"
 if tag == "full":
     tag_value = 1
 elif tag == "shortened":
-    tag_value = 0.25
+    tag_value = 0.5
 else:
     raise Exception("Unknown tag value")
     
