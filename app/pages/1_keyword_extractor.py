@@ -8,6 +8,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
+import datetime as dt
 from keybert import KeyBERT
 # For Flair (Keybert)
 #from flair.embeddings import TransformerDocumentEmbeddings
@@ -43,9 +44,10 @@ _max_width_()
 #%% sidebar a speech
 
 df = pd.read_csv("/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv")
+df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
 
 # Create a select box for the country column
-selected_country = st.sidebar.selectbox("Select country", df["country"].unique())
+selected_country = st.sidebar.selectbox("Select country", df["country"].unique(), index = 7)
 # Filter the data based on the selected country
 filtered_df = df[df["country"] ==selected_country]
 
@@ -56,7 +58,7 @@ filtered_df = filtered_df[filtered_df["author"] == selected_author]
 
 
 # Create a select box for the date column, only showing dates from the selected country and author 
-selected_date = st.sidebar.selectbox("Select date", filtered_df["date"].unique())
+selected_date = st.sidebar.selectbox("Select date", filtered_df.sort_values("date",ascending=False)["date"].unique())
 # Filter the data based on the selected date
 filtered_df = filtered_df[filtered_df["date"] == selected_date]
 
@@ -218,7 +220,7 @@ keywords = kw_model.extract_keywords(
     diversity=Diversity,
 )
 
-st.markdown("## **🎈 Check & download results **")
+st.markdown("#### 🎈 Check & download results")
 
 st.header("")
 
