@@ -18,24 +18,26 @@ import re
 import ast
 import matplotlib.pyplot as plt
 
-# dir
-work_dir = os.getcwd()
 
-# embedder name
-# embedder_name = 'multi-qa-MiniLM-L6-cos-v1'
-embedder_name = "all-MiniLM-L6-v2"
-#embedder_name = 'all-mpnet-base-v2' # heavy weight all-rounder
+#%%
+# 1.load data
 
-# full or shortened text
-tag = "full"
+dic_data = {}
+li_embedder_names = ["all-MiniLM-L6-v2",'all-mpnet-base-v2']
+li_tags = ["full","shortened"]
+#need to change to url(cloud adress)
+li_input_paths = ["/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all-MiniLM-L6-v2_embedding_full.xlsx",
+                  "/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all-MiniLM-L6-v2_embedding_shortened.xlsx",
+                  "/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all-mpnet-base-v2_embedding_full.xlsx"]
 
-# load data
-input_path_data = "/Users/jiayue.yuan/Desktop/Github/KOL_model/INPUT/central_bank_speech/"+embedder_name+"_embedding_"+tag+".xlsx"
-speeches_data = pd.read_excel(input_path_data)
-input_path_ref = "/Users/jiayue.yuan/Desktop/Github/KOL_model/INPUT/reference_tables/weight.xlsx"
+dic_data[li_embedder_names[0]] = {}
+dic_data[li_embedder_names[0]][li_tags[0]] = pd.read_excel(li_input_paths[0])
+dic_data[li_embedder_names[0]][li_tags[1]] = pd.read_excel(li_input_paths[1])
+dic_data[li_embedder_names[1]] = {li_tags[0]:pd.read_excel(li_input_paths[2])}
+
+input_path_ref = "/Users/jiayue.yuan/Documents/Github/KOL_model/INPUT/reference_tables/weight.xlsx"
 reference_table_country = pd.read_excel(input_path_ref, sheet_name="country")
-
-speeches_data = pd.merge(speeches_data, reference_table_country, on="country", how="inner")
+reference_table_topic_list = pd.read_excel(input_path_ref, sheet_name="topic list")
 
 # convert embedding string to array
 def str2array(s):
@@ -44,15 +46,6 @@ def str2array(s):
     # Replace commas and spaces
     s=re.sub('[,\s]+', ', ', s)
     return np.array(ast.literal_eval(s))
-
-speeches_data['text_embedding'] = speeches_data['text_embedding'].apply(str2array)
-speeches_data.set_index('date', inplace=True)
-
-df_search_word = speeches_data.copy()
-
-# re-create date series
-date_range = pd.date_range(start=df_search_word.index.min(), end=df_search_word.index.max())
-date_range = date_range.to_frame()
 
 #%% Function list
 
@@ -73,11 +66,6 @@ def cosine_similarity_function(vec_1, vec_2):
     return value
 
 #%% Variables
-
-# search word list
-
-reference_table_topic_list = pd.read_excel(input_path_ref, sheet_name="topic list")
-
 # time decay
 effective_date_list = [
     [15,0.10],
@@ -101,6 +89,22 @@ power = 6
 individual_plot = True
 summary_plot = True
 
+
+# embedder and tag
+embedder_name = li_embedder_names[0]
+tag = li_tags[0]
+
+speeches_data = dic_data[embedder_name][tag]
+speeches_data = pd.merge(speeches_data, reference_table_country, on="country", how="inner")
+speeches_data['text_embedding'] = speeches_data['text_embedding'].apply(str2array)
+speeches_data.set_index('date', inplace=True)
+
+df_search_word = speeches_data.copy()
+
+# re-create date series
+date_range = pd.date_range(start=df_search_word.index.min(), end=df_search_word.index.max())
+date_range = date_range.to_frame()
+
 #%% Main body
 
 # adjust similarity value
@@ -112,7 +116,7 @@ def adjust_value(value):
     return value
 
 # main loop
-def main_loop(search_word, df_search_word, date_range):
+def main_loop(search_word, search_word_group, polarity, df_search_word, date_range):
 
     # search word embedding
     search_word_embedding = embedding(search_word)
@@ -142,7 +146,7 @@ def main_loop(search_word, df_search_word, date_range):
     df_relevant = df_merged.loc[df_merged[search_word] != 0]
     df_relevant = df_relevant.sort_values(by=[search_word], ascending=False).head(5)
     
-    print(df_relevant)
+    #print(df_relevant)
 
     # plot individual plot
     if individual_plot:    
@@ -159,31 +163,39 @@ def main_loop(search_word, df_search_word, date_range):
         plt.plot(x, y)
         plt.show()
     
+    # apply polarity
+    df_merged = df_merged * polarity
+    
+    # apply topic group
+    df_merged.columns = [search_word_group, search_word_group+" value"]
+    
     return df_merged
 
 df_output = pd.DataFrame()
 
-for search_word in reference_table_topic_list["child topics"]:
-    df_merged = main_loop(search_word, df_search_word, date_range)
+for i in range(len(reference_table_topic_list)):
+    search_word = reference_table_topic_list["child topics questions"][i]
+    search_word_group = reference_table_topic_list["child topics"][i]
+    polarity = reference_table_topic_list["polarity"][i]
+    df_merged = main_loop(search_word, search_word_group, polarity, df_search_word, date_range)
     df_output = pd.concat([df_output, df_merged], axis=1)
 
+df_output = df_output.groupby(level=0, axis=1).sum()
 #%% plot summary chart
 
 if summary_plot:
 
-    if len(reference_table_topic_list["child topics"]) > 2:
+    if len(df_output.columns) > 2:
         n_col = 2
         width = n_col
-        height = np.ceil(len(reference_table_topic_list["child topics"])/n_col).astype(int)
+        height = np.ceil(len(df_output.columns)/n_col).astype(int)
         plt.rcParams["figure.figsize"] = (width*10,height*5)
         fig, ax = plt.subplots(nrows=height, ncols=width)
         
-        count = 0
-        for search_word in reference_table_topic_list["child topics"]:
-            ax[int(count/n_col), count%n_col].plot(df_output.iloc[:, count*2+1])
-            ax[int(count/n_col), count%n_col].set_title(search_word)
-            count += 1
-        
+        for i in range(len(df_output.columns)):
+            ax[int(i/n_col),i%n_col].plot(df_output.iloc[:,i])
+            ax[int(i/n_col),i%n_col].set_title(df_output.columns[i])
+
         plt.show()
     else:
         pass
@@ -209,41 +221,51 @@ df_output.to_excel("df_output.xlsx")
 
 #%% Treemap
 
-df = df_output.iloc[:,1::2]
-df.columns = df_output.iloc[:,::2].columns
-
-# get today's value
-df_today = df.sort_index().tail(1).unstack()
-df_today.reset_index(level = -1,drop = True, inplace = True )
-
-# adjusted index (in 10 years from 2012-01-01)
-df_selected = df.loc[df.index >= "2012-01-01"]
-
-df_adjusted = ((df_selected -df_selected.min())/(df_selected.max() - df_selected.min())).tail(1).T
-df_result = pd.concat([df_today,df_adjusted],axis = 1)
-df_result.reset_index(inplace = True)
-df_result.columns = ["child topics", "value","adj_value"]
-df_result_final = pd.merge(df_result, 
-                      reference_table_topic_list, 
-                      on ='child topics', 
-                      how ='inner')
-
-# plot treemap
 import plotly.express as px
 import plotly.io as pio
 pio.renderers.default = 'browser'
 
-# create a treemap of the data using Plotly
-fig = px.treemap(df_result_final, 
-                 path=[px.Constant('Market topics'), 'parent topics', 'child topics'],
-                 values='value',
-                 color='adj_value', 
-                 #color_continuous_scale='RdBu_r',
-                  color_continuous_scale='oranges',
-                 hover_data={'value':':.2f', 'adj_value':':d'})
+def plot_treemap(df_output,eval_date):
 
-# show the treemap
-#fig.update_layout(margin = dict(t=50, l=25, r=25, b=25))
+    df = df_output.iloc[:,1::2]
+    df.columns = df_output.iloc[:,::2].columns
+    
+    # get today's value
+    df_today = df.loc[[eval_date]].T
+    #df_today = df.sort_index().tail(1).T
+    df_today = df_today.abs()
+    
+    # adjusted index (10 years from 2012-01-01)
+    df_selected = df.loc[df.index >= "2012-01-01"]
+    
+    df_adjusted = ((df_selected -df_selected.min())/(df_selected.max() - df_selected.min()))
+    df_adjusted_today = df_adjusted.loc[[eval_date]].T
+    df_result = pd.concat([df_today,df_adjusted_today],axis = 1)
+    df_result.reset_index(inplace = True)
+    df_result.columns = ["child topics", "value","adj_value"]
+    
+    parent_topics = reference_table_topic_list.drop_duplicates(subset="child topics")
+    df_result_final = pd.merge(df_result, 
+                          parent_topics, 
+                          on ='child topics', 
+                          how ='inner')
+    
+    # create a treemap of the data using Plotly
+    fig = px.treemap(df_result_final, 
+                     path=[px.Constant('Market topics'), 'parent topics', 'child topics'],
+                     values='value',
+                     color='adj_value', 
+                     #color_continuous_scale='RdBu_r',
+                      color_continuous_scale='oranges',
+                     hover_data={'value':':.2f', 'adj_value':':d'})
+    
+    # show the treemap
+    #fig.update_layout(margin = dict(t=50, l=25, r=25, b=25))
+    fig.update_layout(font_size=20,font_family="Open Sans",font_color="#444")
+    
+    return fig
+ 
+    
+fig = plot_treemap(df_output,"2022-11-10")
 
-fig.update_layout(font_size=20,font_family="Open Sans",font_color="#444")
 fig.show()
