@@ -6,20 +6,38 @@ Created on Mon Feb 13 13:46:53 2023
 @author: jiayue.yuan
 """
 
-#%%
-# libraries
+
+
+#%% streamlit
+import streamlit as st
+#from functionforDownloadButtons import download_button
+
+# data processing
 import pandas as pd
 import numpy as np
+import datetime as dt
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import re
 import ast
+from numpy.linalg import norm
+
+# plot
 import matplotlib.pyplot as plt
+import plotly.express as px
+#pio.renderers.default = 'browser'
+
+# embedding
+from sentence_transformers import SentenceTransformer
+
+
+st.set_page_config(
+    page_title="Topic Trend Tracker",
+    page_icon="🎈",
+    layout="wide",
+)
 
 #%% Embedding Functions
-
-# embedding model
-from sentence_transformers import SentenceTransformer
 
 def embedding(text):
     embedder = SentenceTransformer(embedder_name)
@@ -28,8 +46,6 @@ def embedding(text):
     return doc_embeddings
 
 # cosine similarity
-from numpy.linalg import norm
-
 def cosine_similarity_function(vec_1, vec_2):
     value = np.dot(vec_1, vec_2.T)/(norm(vec_1)*norm(vec_2))
     return value
@@ -46,7 +62,7 @@ def adjust_value(value):
     return value
 
 # main loop
-def main_loop(search_word, search_word_group, polarity, df_search_word, date_range, individual_plot):
+def main_loop(search_word, search_word_group, polarity, df_search_word, date_range):
 
     # search word embedding
     search_word_embedding = embedding(search_word)
@@ -78,31 +94,26 @@ def main_loop(search_word, search_word_group, polarity, df_search_word, date_ran
     
     #print(df_relevant)
 
-    # plot individual plot
-    dic_figs = {}
+    # plot individual plot   
     
-    if individual_plot:    
-        
-        plt.rcParams["figure.figsize"] = (10,6)
-        
-        x = df_merged.index
-        y = df_merged[search_word+" value"]
-        
-        plt.xlabel("Date")
-        plt.ylabel(search_word+" value")
-        plt.title(search_word)
-        
-        fig = plt.plot(x, y)
-        dic_figs[search_word] = fig
-        #plt.show()
+    plt.rcParams["figure.figsize"] = (10,6)
     
+    x = df_merged.index
+    y = df_merged[search_word+" value"]
+    
+    plt.xlabel("Date")
+    plt.ylabel(search_word+" value")
+    plt.title(search_word)
+    
+    fig = plt.plot(x, y)
+           
     # apply polarity
     df_merged = df_merged * polarity
     
     # apply topic group
     df_merged.columns = [search_word_group, search_word_group+" value"]
     
-    return df_merged, dic_figs
+    return df_merged, fig
 
 #%% plot summary chart
 
@@ -127,34 +138,28 @@ def plot_summary():
         #plt.show()
 
 #%% Plotly
-    
-'''    
-import plotly.express as px
-import plotly.io as pio
-pio.renderers.default = 'browser'
-x = df_output.index
-y = df_output["value"]
-fig = px.line(
-    df_output, 
-    x=df_output.index, 
-    y = df_output["value"],
-    title=search_word+" trend")
-fig.show()
-'''
+
+# x = df_output.index
+# y = df_output["value"]
+# fig = px.line(
+#     df_output, 
+#     x=df_output.index, 
+#     y = df_output["value"],
+#     title=search_word+" trend")
+# fig.show()
+
 
 #%% Export
 #df_output.to_excel("df_output.xlsx")
 
 #%% Treemap
-
-import plotly.express as px
-import plotly.io as pio
-pio.renderers.default = 'browser'
-
 def plot_treemap(df_output,eval_date,period_start, period_end):
 
     df = df_output.iloc[:,1::2]
     df.columns = df_output.iloc[:,::2].columns
+    
+    #convert df.index to dt.date
+    df.index = pd.to_datetime(df.index)
     
     # get today's value
     df_today = df.loc[[eval_date]].T
@@ -162,7 +167,12 @@ def plot_treemap(df_output,eval_date,period_start, period_end):
     df_today = df_today.abs()
     
     # adjusted index (10 years from 2012-01-01)
-    df_selected = df.loc[df.index >= period_start & df.index <= period_end]
+    period_start = dt.date(2012,1,1)
+    period_start = dt.date(2022,1,1)
+    
+    df_selected = df.loc[df.index >= str(period_start)]
+    df_selected = df.loc[df.index <= str(period_end)]
+
     
     df_adjusted = ((df_selected -df_selected.min())/(df_selected.max() - df_selected.min()))
     df_adjusted_today = df_adjusted.loc[[eval_date]].T
@@ -196,17 +206,6 @@ def plot_treemap(df_output,eval_date,period_start, period_end):
 
 #fig.show()
 
-
-
-#%% streamlit app
-import streamlit as st
-from functionforDownloadButtons import download_button
-
-st.set_page_config(
-    page_title="Topic Trend Tracker",
-    page_icon="🎈",
-    layout="wide",
-)
 
 #%% 1. load data 
 
@@ -257,8 +256,8 @@ reference_table_topic_list = dic_reference_data["topic_list"]
 
 # select data and preprocessing
 speeches_data = dic_speeches_data[embedder_name][tag]
-speeches_data = dic_speeches_data(speeches_data, reference_table_country, on="country", how="inner")
-speeches_data['text_embedding'] = dic_speeches_data['text_embedding'].apply(str2array)
+speeches_data = pd.merge(speeches_data, reference_table_country, on="country", how="inner")
+speeches_data['text_embedding'] = speeches_data['text_embedding'].apply(str2array)
 speeches_data.set_index('date', inplace=True)
 
 df_search_word = speeches_data.copy()
@@ -286,14 +285,14 @@ effective_date_list = [
 individual_plot = True
 summary_plot = True
 
-with st.sidebar():
+with st.sidebar:
     
     with st.form(key="my_form"):
     
-        st.write("Topic search setting")
+        st.write("🔸Topic search setting")
     
         # threshold levelcolorscales
-        min_threshold = st.sidebar.slider(
+        min_threshold = st.slider(
                 "Min threshold",
                 value=0.1,
                 min_value=0.1,
@@ -305,7 +304,7 @@ with st.sidebar():
             )
         
         # scaling factor
-        power = st.sidebar.number_input(
+        power = st.number_input(
                 "Power",
                 value=6,
                 min_value=1,
@@ -315,49 +314,44 @@ with st.sidebar():
             )
     
         
-        st.write("Plot setting: ") 
-        
-        individual_plot_checkbox = st.checkbox(
-            "plot trend of each topic",
-            help="Tick this box to plot trend of each topic",
-        )
+        st.write("🔸Plot setting: ") 
         
         summary_plot_checkbox = st.checkbox(
-            "plot trends of topics together",
+            "generate a summary plot of topics trends",
             help="Tick this box to plot trends of topics",
         )
         
-        st.write("Treemap setting: ") 
+        st.write("🔸Treemap setting: ") 
         #evaluation date
         eval_date = st.date_input("🗓Choose evaluation date",
-                                  value = "2022-11-10", # can change to Today() after go-live
-                                  min_value= "2000-11-10", 
-                                  max_value= "2022-11-10",
+                                  value = dt.date(2022,11,10), # can change to Today() after go-live
+                                  min_value= dt.date(2000,11,10), 
+                                  max_value= dt.date(2022,11,10),
                                   help=""" To evaluate the market narratives on a specific date.
                                   """,)
             
         # Caution : parameters conflicts(eval_date & period), min date in dataframe : 1990-11-28
-        period_start = st.date_input("🗓Choose evaluation date",
-                                  value = "2012-11-10", # can change to Today() after go-live
-                                  min_value= "2000-11-10", 
-                                  max_value= "2022-11-10",
+        period_start = st.date_input("🗓Choose period start date",
+                                  value = dt.date(2012,11,10), # can change to Today() after go-live
+                                  min_value= dt.date(2000,11,10), 
+                                  max_value= dt.date(2022,11,10),
                                   help=""" The start date of period.
                                   """,)
                                   
-        period_end = st.date_input("🗓Choose evaluation date",
-                                  value = "2022-11-10", # can change to Today() after go-live
-                                  min_value= "2000-11-10", 
-                                  max_value= "2022-11-10",
+        period_end = st.date_input("🗓Choose period end date",
+                                  value = dt.date(2022,11,10), # can change to Today() after go-live
+                                  min_value= dt.date(2000,11,10), 
+                                  max_value= dt.date(2022,11,10),
                                   help=""" The end date of period.
                                   """,)
                                   
         submit_button = st.form_submit_button(label="✨ Get me the result!")
-
-        if individual_plot_checkbox:
-            if_individual_plot = True
             
         if summary_plot_checkbox:
             if_summary_plot = True
+        else: 
+            if_summary_plot = False
+            
  
 if not submit_button:
     st.stop()   
@@ -369,13 +363,16 @@ if period_start > period_end:
 #%% 4. main loop for topic searching
 
 df_output = pd.DataFrame()
+dic_figs = {}
 
 for i in range(len(reference_table_topic_list)):
+    
     search_word = reference_table_topic_list["child topics questions"][i]
     search_word_group = reference_table_topic_list["child topics"][i]
     polarity = reference_table_topic_list["polarity"][i]
-    df_merged, dic_figs = main_loop(search_word, search_word_group, polarity, df_search_word, date_range) # figs
+    df_merged, fig = main_loop(search_word, search_word_group, polarity, df_search_word, date_range) 
     df_output = pd.concat([df_output, df_merged], axis=1)
+    dic_figs[search_word_group] = fig
 
 df_output = df_output.groupby(level=0, axis=1).sum()
 
@@ -383,7 +380,7 @@ df_output = df_output.groupby(level=0, axis=1).sum()
 if summary_plot:
     fig_summary = plot_summary()
 
-fig_treemap = plot_treemap(df_output,eval_date)
+fig_treemap = plot_treemap(df_output,eval_date,period_start,period_end)
 
 #%% main page layout
 
@@ -398,8 +395,7 @@ with c1:
     topic1 = st.selectbox("select a topic",
                           list(dic_figs.keys()),
                           index = 0)
-    
-    st.pyplot(dic_figs[topic1]) 
+    #st.pyplot(dic_figs[topic1]) 
     
     
 with c2:  
@@ -408,29 +404,15 @@ with c2:
                           list(dic_figs.keys()),
                           index = 1)
     
-    st.pyplot(dic_figs[topic2]) 
+    #st.pyplot(dic_figs[topic2]) 
 
 st.markdown("#### 📈Check & download results")
-
-st.header("")
-
-cs, c1, c2, cLast = st.columns([2, 1.5, 1.5, 2])
-
-with c1:
-    CSVButton2 = download_button(df_output, "Topic_Trend.csv", "📥 Download Topic Trends data (.csv)")
-with c2:
-    st.write("placeholder for jpeg download")
-    #CSVButton2 = download_button(df_output, "Trend_pic.jpeg", "📥 Download (.jpeg)")
-    
+   
 if summary_plot:
     st.pyplot(fig_summary) 
 
-
 st.markdown("### 📊 View topic Treemap ")
 st.plotly_chart(fig_treemap)
-    
-
-# download summary plot
 
 
 

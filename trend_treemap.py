@@ -34,6 +34,7 @@ df_result = pd.concat([df_today,df_adjusted],axis = 1)
 df_result.reset_index(inplace = True)
 df_result.columns = ["topic", "value","adj_value"]
 
+df.sort_index().head(1)
 
 #%% treemap
 import plotly.express as px
