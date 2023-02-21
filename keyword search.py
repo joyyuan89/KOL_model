@@ -97,7 +97,7 @@ min_threshold = 0.10
 # scaling factor (default is 6)
 power = 6
 
-individual_plot = True
+individual_plot = False
 summary_plot = True
 
 #%% Main body
@@ -228,18 +228,25 @@ df_today.reset_index(level = -1,drop = True, inplace = True )
 df_today = df_today.abs()
 
 # adjusted index (in 10 years from 2012-01-01)
-df_selected = df.loc[df.index >= '2012-01-01']
+df_selected = df.loc[df.index >= '2006-01-01']
 
-df_adjusted = ((df_selected -df_selected.min())/(df_selected.max() - df_selected.min())).tail(1).T
+# 2 methods of calculating adjusted value
+# 1st method is to calculate relative percentage of min and max
+# df_adjusted = ((df_selected -df_selected.min())/(df_selected.max() - df_selected.min())).tail(1).T
+
+# 2nd method is to calculate the percentile of the last value
+df_adjusted = df_selected.rank(pct=True).tail(1).T
+
 df_result = pd.concat([df_today,df_adjusted],axis = 1)
 df_result.reset_index(inplace = True)
-df_result.columns = ['child topics', 'popularity', 'importance']
+df_result.columns = ['child topics', 'popularity', 'severity']
 
 parent_topics = reference_table_topic_list.drop_duplicates(subset='child topics')
 df_result_final = pd.merge(df_result, 
                       parent_topics, 
                       on ='child topics', 
                       how ='inner')
+
 
 # plot treemap
 import plotly.express as px
@@ -250,13 +257,13 @@ pio.renderers.default = 'browser'
 fig = px.treemap(df_result_final, 
                  path=[px.Constant('Market topics'), 'parent topics', 'child topics'],
                  values='popularity',
-                 color='importance', 
+                 color='severity', 
                  #color_continuous_scale='RdBu_r',
                   color_continuous_scale='oranges',
-                 hover_data={'popularity':':.2f', 'importance':':.2f'})
+                 hover_data={'popularity':':.2f', 'severity':':.2f'})
 
 # show the treemap
 #fig.update_layout(margin = dict(t=50, l=25, r=25, b=25))
 
-fig.update_layout(font_size=20,font_family="Open Sans",font_color="#444")
+fig.update_layout(font_size=20,font_family="sans-serif ",font_color="#444")
 fig.show()
