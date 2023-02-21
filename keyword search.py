@@ -94,10 +94,10 @@ effective_date_list = [
 # threshold levelcolorscales
 min_threshold = 0.10
 
-# scaling factor
+# scaling factor (default is 6)
 power = 6
 
-individual_plot = False
+individual_plot = True
 summary_plot = True
 
 #%% Main body
@@ -225,7 +225,7 @@ df.columns = df_output.iloc[:,::2].columns
 # get today's value
 df_today = df.sort_index().tail(1).unstack()
 df_today.reset_index(level = -1,drop = True, inplace = True )
-df_today.mask(df_today < 0, 0.001, inplace=True)
+df_today = df_today.abs()
 
 # adjusted index (in 10 years from 2012-01-01)
 df_selected = df.loc[df.index >= "2012-01-01"]
