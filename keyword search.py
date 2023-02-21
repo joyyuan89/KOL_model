@@ -228,7 +228,7 @@ df_today.reset_index(level = -1,drop = True, inplace = True )
 df_today = df_today.abs()
 
 # adjusted index (in 10 years from 2012-01-01)
-df_selected = df.loc[df.index >= '2006-01-01']
+df_selected = df.loc[df.index >= '2019-01-01']
 
 # 2 methods of calculating adjusted value
 # 1st method is to calculate relative percentage of min and max
