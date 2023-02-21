@@ -228,14 +228,14 @@ df_today.reset_index(level = -1,drop = True, inplace = True )
 df_today = df_today.abs()
 
 # adjusted index (in 10 years from 2012-01-01)
-df_selected = df.loc[df.index >= "2012-01-01"]
+df_selected = df.loc[df.index >= '2012-01-01']
 
 df_adjusted = ((df_selected -df_selected.min())/(df_selected.max() - df_selected.min())).tail(1).T
 df_result = pd.concat([df_today,df_adjusted],axis = 1)
 df_result.reset_index(inplace = True)
-df_result.columns = ["child topics", "value","adj_value"]
+df_result.columns = ['child topics', 'popularity', 'importance']
 
-parent_topics = reference_table_topic_list.drop_duplicates(subset="child topics")
+parent_topics = reference_table_topic_list.drop_duplicates(subset='child topics')
 df_result_final = pd.merge(df_result, 
                       parent_topics, 
                       on ='child topics', 
@@ -249,11 +249,11 @@ pio.renderers.default = 'browser'
 # create a treemap of the data using Plotly
 fig = px.treemap(df_result_final, 
                  path=[px.Constant('Market topics'), 'parent topics', 'child topics'],
-                 values='value',
-                 color='adj_value', 
+                 values='popularity',
+                 color='importance', 
                  #color_continuous_scale='RdBu_r',
                   color_continuous_scale='oranges',
-                 hover_data={'value':':.2f', 'adj_value':':d'})
+                 hover_data={'popularity':':.2f', 'importance':':.2f'})
 
 # show the treemap
 #fig.update_layout(margin = dict(t=50, l=25, r=25, b=25))
