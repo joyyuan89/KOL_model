@@ -136,12 +136,6 @@ def main_loop(search_word, search_word_group, polarity, df_search_word, date_ran
     df_merged[search_word+" value"] = 0
     for i in effective_date_list:
         df_merged[search_word+" value"] += df_merged[search_word].rolling(window=i[0], min_periods=1).sum()*i[1]
-    
-    # display top n relevant news
-    df_relevant = df_merged.loc[df_merged[search_word] != 0]
-    df_relevant = df_relevant.sort_values(by=[search_word], ascending=False).head(5)
-    
-    print(df_relevant)
 
     # plot individual plot
     if individual_plot:    
@@ -168,12 +162,15 @@ def main_loop(search_word, search_word_group, polarity, df_search_word, date_ran
 
 df_output = pd.DataFrame()
 
+# main looop
+print("main loop running...")
 for i in range(len(reference_table_topic_list)):
     search_word = reference_table_topic_list["child topics questions"][i]
     search_word_group = reference_table_topic_list["child topics"][i]
     polarity = reference_table_topic_list["polarity"][i]
     df_merged = main_loop(search_word, search_word_group, polarity, df_search_word, date_range)
     df_output = pd.concat([df_output, df_merged], axis=1)
+print("main loop completed")
 
 df_output = df_output.groupby(level=0, axis=1).sum()
 #%% plot summary chart
@@ -224,13 +221,18 @@ df.columns = df_output.iloc[:,::2].columns
 
 # get today's value
 df_today = df.sort_index().tail(1).unstack()
-df_today.reset_index(level = -1,drop = True, inplace = True )
+df_today.reset_index(level=-1, drop=True, inplace=True)
 df_today = df_today.abs()
 
 # adjusted index (in 10 years from 2012-01-01)
-df_selected = df.loc[df.index >= '2019-01-01']
+df_selected = df.loc[df.index >= '2012-01-01']
+
+###
+### to implement some time decay by resampling
+###
 
 # 2 methods of calculating adjusted value
+
 # 1st method is to calculate relative percentage of min and max
 # df_adjusted = ((df_selected -df_selected.min())/(df_selected.max() - df_selected.min())).tail(1).T
 
