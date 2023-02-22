@@ -15,8 +15,8 @@ from keybert import KeyBERT
 import seaborn as sns
 # For download buttons
 from functionforDownloadButtons import download_button
-import os
-import json
+#import os
+#import json
 
 st.set_page_config(
     page_title="BERT Keyword Extractor",
@@ -44,7 +44,7 @@ _max_width_()
 #%% load data 
 
 # Read in data from local.
-@st.cache
+@st.cache_data
 def load_data(local_path):
     df = pd.read_csv(local_path)
     df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
