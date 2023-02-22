@@ -94,18 +94,26 @@ def main_loop(search_word, search_word_group, polarity, df_search_word, date_ran
     
     #print(df_relevant)
 
-    # plot individual plot   
+    # plot individual plot  
     
-    plt.rcParams["figure.figsize"] = (10,6)
+    # plt method
     
+    # plt.rcParams["figure.figsize"] = (10,6)
+    
+    # x = df_merged.index
+    # y = df_merged[search_word+" value"]
+    
+    # plt.xlabel("Date")
+    # plt.ylabel(search_word+" value")
+    # plt.title(search_word)
+    
+    # fig = plt.plot(x, y)
+    
+    #ployly method
+
     x = df_merged.index
     y = df_merged[search_word+" value"]
-    
-    plt.xlabel("Date")
-    plt.ylabel(search_word+" value")
-    plt.title(search_word)
-    
-    fig = plt.plot(x, y)
+    fig = px.line(df_merged, x, y, title=search_word_group+" trend")   
            
     # apply polarity
     df_merged = df_merged * polarity
@@ -119,7 +127,6 @@ def main_loop(search_word, search_word_group, polarity, df_search_word, date_ran
 
 def plot_summary():
     
-    summary_plot
 
     if len(df_output.columns) > 2:
         n_col = 2
@@ -206,32 +213,29 @@ def plot_treemap(df_output,eval_date,period_start, period_end):
 
 #fig.show()
 
-
-#%% 1. load data 
+#%% load data 
 
 # Read in data from local.
-@st.cache
-def load_data(li_embedder_names,li_tags):
+@st.cache_data
+def load_speeches_data(embedder_name,tag):
 
     #1.1 speech data
-    dic_speeches_data = {}
     #need to change to url(cloud adress)
-    li_input_paths = ["/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all-MiniLM-L6-v2_embedding_full.xlsx",
-                      "/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all-MiniLM-L6-v2_embedding_shortened.xlsx",
-                      "/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all-mpnet-base-v2_embedding_full.xlsx"]
+    input_path = "/Users/yjy/Documents/GitHub/KOL_model/INPUT/central_bank_speech/" + embedder_name + "_embedding_" + tag + ".xlsx"
+    speeches_data = pd.read_excel(input_path)
     
-    dic_speeches_data[li_embedder_names[0]] = {}
-    dic_speeches_data[li_embedder_names[0]][li_tags[0]] = pd.read_excel(li_input_paths[0])
-    dic_speeches_data[li_embedder_names[0]][li_tags[1]] = pd.read_excel(li_input_paths[1])
-    dic_speeches_data[li_embedder_names[1]] = {li_tags[0]:pd.read_excel(li_input_paths[2])}
+    return speeches_data
+    
+@st.cache_data
+def load_reference_data():
     
     #1.2 reference data
     dic_reference_data = {}
-    input_path_ref = "/Users/jiayue.yuan/Documents/Github/KOL_model/INPUT/reference_tables/weight.xlsx"
+    input_path_ref = "/Users/yjy/Documents/Github/KOL_model/INPUT/reference_tables/weight.xlsx"
     dic_reference_data["country_weight"] = pd.read_excel(input_path_ref, sheet_name="country")
     dic_reference_data["topic_list"] = pd.read_excel(input_path_ref, sheet_name="topic list")
     
-    return dic_speeches_data, dic_reference_data
+    return dic_reference_data
 
 # convert embedding string to array
 def str2array(s):
@@ -241,32 +245,12 @@ def str2array(s):
     s=re.sub('[,\s]+', ', ', s)
     return np.array(ast.literal_eval(s))
 
+
+#%%pre-defined variables
+
 li_embedder_names = ["all-MiniLM-L6-v2",'all-mpnet-base-v2']
 li_tags = ["full","shortened"]
-dic_speeches_data, dic_reference_data = load_data(li_embedder_names,li_tags)
 
-#%% 2. sidebar for embedding data
-
-embedder_name = st.sidebar.selectbox("Select embedder", li_embedder_names)
-tag = st.sidebar.selectbox("Select full or shortened text", li_tags)
-
-# choose topic_list(to add more lists later)
-reference_table_country = dic_reference_data["country_weight"]
-reference_table_topic_list = dic_reference_data["topic_list"]
-
-# select data and preprocessing
-speeches_data = dic_speeches_data[embedder_name][tag]
-speeches_data = pd.merge(speeches_data, reference_table_country, on="country", how="inner")
-speeches_data['text_embedding'] = speeches_data['text_embedding'].apply(str2array)
-speeches_data.set_index('date', inplace=True)
-
-df_search_word = speeches_data.copy()
-
-# re-create date series
-date_range = pd.date_range(start=df_search_word.index.min(), end=df_search_word.index.max())
-date_range = date_range.to_frame()
-
-#%% 3. sidebar for adjustable parameters
 
 # time decay (to replace with functions later)
 effective_date_list = [
@@ -282,12 +266,78 @@ effective_date_list = [
     [360,0.10],
     ]
 
-individual_plot = True
-summary_plot = True
+#%% main page
+
+st.title(" 🎈 Topic Trend and Treemap")
+st.header("")
+
+with st.expander("ℹ️ - About this page", expanded=True):
+
+    st.write(
+        """     
+-   We collect a list of meaningful topics. This page shows you the trends of each topic and a treemap. 
+-   In the sidebar, you can flexibly adjust topic search and treemap setting.
+	    """
+    )
+
+    st.markdown("")
+
+st.markdown("")
+
+st.markdown("### 🟠 Plase Choose an embedding model first: ")
+
+
+#with st.form(key="my_form1"):
+    
+c1,c2 = st.columns([2,2])
+
+with c1:
+    embedder_name = st.selectbox("Select embedder",
+                                 li_embedder_names)
+    
+with c2:      
+    tag = st.selectbox("Select full or shortened text", li_tags)
+    
+#button1 = st.form_submit_button(label="✨ Load data!")
+        
+    #if not submit_button1:
+        #st.stop()
+
+#if st.button1('✨ Load data!'):
+            
+with st.spinner(text='Loading data'):
+
+    speeches_data = load_speeches_data(embedder_name,tag)
+    
+    dic_reference_data  = load_reference_data()
+    
+    # data preprocessing
+    reference_table_country = dic_reference_data["country_weight"]
+    reference_table_topic_list = dic_reference_data["topic_list"]
+    
+    speeches_data = pd.merge(speeches_data, reference_table_country, on="country", how="inner")
+    speeches_data['text_embedding'] = speeches_data['text_embedding'].apply(str2array)
+    speeches_data.set_index('date', inplace=True)
+    
+    df_search_word = speeches_data.copy()
+    
+    # re-create date series
+    date_range = pd.date_range(start=df_search_word.index.min(), end=df_search_word.index.max())
+    date_range = date_range.to_frame()
+
+    st.success('Data loaded suceddfully :sunglasses: ')
+
+# add session state
+
+#st.markdown("###### :green[_data loaded sucessfully_ :sunglasses:]")
+
+#%% 3. sidebar for adjustable parameters
+
+st.markdown("### 🟠 Adjust topic search and treemap settings in sidebar: ")
 
 with st.sidebar:
     
-    with st.form(key="my_form"):
+    with st.form(key="my_form2"):
     
         st.write("🔸Topic search setting")
     
@@ -314,13 +364,6 @@ with st.sidebar:
             )
     
         
-        st.write("🔸Plot setting: ") 
-        
-        summary_plot_checkbox = st.checkbox(
-            "generate a summary plot of topics trends",
-            help="Tick this box to plot trends of topics",
-        )
-        
         st.write("🔸Treemap setting: ") 
         #evaluation date
         eval_date = st.date_input("🗓Choose evaluation date",
@@ -345,22 +388,20 @@ with st.sidebar:
                                   help=""" The end date of period.
                                   """,)
                                   
-        submit_button = st.form_submit_button(label="✨ Get me the result!")
-            
-        if summary_plot_checkbox:
-            if_summary_plot = True
-        else: 
-            if_summary_plot = False
-            
+        submit_button2 = st.form_submit_button(label="✨ Get me the result!")
+        
+        if not submit_button2:
+            st.stop() 
  
-if not submit_button:
-    st.stop()   
- 
-if period_start > period_end:
-    st.warning(" period end date can't be earlier than period start date")
-    st.stop()
+        if period_start > period_end:
+            st.warning(" period end date can't be earlier than period start date")
+            st.stop()
 
 #%% 4. main loop for topic searching
+
+placeholder = st.empty()
+placeholder.text("Calculating......")
+#st.write("Caculating......")
 
 df_output = pd.DataFrame()
 dic_figs = {}
@@ -377,25 +418,21 @@ for i in range(len(reference_table_topic_list)):
 df_output = df_output.groupby(level=0, axis=1).sum()
 
 
-if summary_plot:
-    fig_summary = plot_summary()
-
 fig_treemap = plot_treemap(df_output,eval_date,period_start,period_end)
+
+placeholder.empty()
 
 #%% main page layout
 
-st.title(" 🎈 Topic Trend and Treemap")
-st.header("")
-
 #compare two plots
-st.markdown("### 📈 View topic trends ")
+st.markdown("##### 📈 View topic trends ")
 
 ce, c1, ce, c2, ce = st.columns([0.2, 2, 0.2, 2, 0.2,])
 with c1:
     topic1 = st.selectbox("select a topic",
                           list(dic_figs.keys()),
                           index = 0)
-    #st.pyplot(dic_figs[topic1]) 
+    st.plotly_chart(dic_figs[topic1]) 
     
     
 with c2:  
@@ -404,15 +441,25 @@ with c2:
                           list(dic_figs.keys()),
                           index = 1)
     
-    #st.pyplot(dic_figs[topic2]) 
-
-st.markdown("#### 📈Check & download results")
+    st.plotly_chart(dic_figs[topic2]) 
+    
+        
+# summary_plot_checkbox = st.checkbox(
+#     "🔸Display all topics trends",
+#     help="Tick this box to diaplay all topic trends",
+#         )
    
-if summary_plot:
-    st.pyplot(fig_summary) 
+# if summary_plot_checkbox:
+#     st.container()
+#     st.pyplot()
 
 st.markdown("### 📊 View topic Treemap ")
-st.plotly_chart(fig_treemap)
+    
+fig_treemap.update_layout(width = 1000, height=800)
+st.plotly_chart(fig_treemap,width = 1000, height=800)
+
+    
+
 
 
 

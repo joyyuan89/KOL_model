@@ -50,7 +50,7 @@ def load_data(local_path):
     df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
     return df
 
-df = pd.read_csv("/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv")
+df = pd.read_csv("/Users/yjy/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv")
 
 # Read in data from the Google Sheet.
 # @st.cache()
@@ -105,10 +105,11 @@ with st.expander("ℹ️ - About this page", expanded=True):
     st.markdown("")
 
 st.markdown("")
-st.markdown(" ### 📌 View full text >>> ")
-st.header(title)
 
-with st.expander("📔 -full text", expanded=True):
+st.header("Title: " + title)
+st.markdown(" ### 📌 View full text >>> ")
+
+with st.expander("📔 -full text", expanded=False):
 
     st.markdown(doc)
     
@@ -133,14 +134,14 @@ with st.form(key="my_form"):
         if ModelType == "all-MiniLM-L6-v2":
             # kw_model = KeyBERT(model=roberta)
     
-            @st.cache(allow_output_mutation=True)
+            @st.cache_resource()
             def load_model():
                 return KeyBERT(model="all-MiniLM-L6-v2")
     
             kw_model = load_model()
     
         else:
-            @st.cache(allow_output_mutation=True)
+            @st.cache_resource()
             def load_model():
                 return KeyBERT("distilbert-base-nli-mean-tokens")
     
