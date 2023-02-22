@@ -46,7 +46,7 @@ tag = "full"
 if tag == "full":
     tag_value = 1
 elif tag == "shortened":
-    tag_value = 0.5
+    tag_value = 0.25
 else:
     raise Exception("Unknown tag value")
     
@@ -78,4 +78,4 @@ print("program completed")
 print("--- %s sec ---" % (time.time() - start_time))
 
 #%% Download
-speeches_data.to_csv(embedder_name+"_embedding_"+tag+".csv")
+speeches_data.to_csv(embedder_name+"_embedding_"+tag+".xlsx")
