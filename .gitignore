@@ -11,3 +11,4 @@ INPUT/central_bank_speech/multi-qa-MiniLM-L6-cos-v1_embedding.xlsx
 INPUT/central_bank_speech/all-mpnet-base-v2_embedding.xlsx
 *.csv
 *.xlsx
+all-mpnet-base-v2_embedding_shortened.xlsx
