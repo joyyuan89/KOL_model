@@ -94,8 +94,8 @@ effective_date_list = [
 # threshold levelcolorscales
 min_threshold = 0.10
 
-# scaling factor (default is 6)
-power = 6
+# scaling factor (default is 4)
+power = 4
 
 individual_plot = False
 summary_plot = True
@@ -224,12 +224,19 @@ df_today = df.sort_index().tail(1).unstack()
 df_today.reset_index(level=-1, drop=True, inplace=True)
 df_today = df_today.abs()
 
-# adjusted index (in 10 years from 2012-01-01)
-df_selected = df.loc[df.index >= '2012-01-01']
+# adjusted index with some time decay (testing)
+selection_list = [
+    ['1990-01-01', '2008-01-01', 5],
+    ['2008-01-01', '2018-01-01', 2],
+    ['2018-01-01', '2023-01-01', 1],
+    ]
 
-###
-### to implement some time decay by resampling
-###
+df_selected = pd.DataFrame()
+for item in selection_list:
+    df_temp = df.loc[(df.index >= item[0])&(df.index < item[1])]
+    df_temp = df_temp.iloc[::item[2], :]
+    df_selected = pd.concat([df_selected, df_temp], axis=0)
+
 
 # 2 methods of calculating adjusted value
 
