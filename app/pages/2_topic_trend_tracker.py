@@ -221,7 +221,7 @@ def load_speeches_data(embedder_name,tag):
 
     #1.1 speech data
     #need to change to url(cloud adress)
-    input_path = "/Users/yjy/Documents/GitHub/KOL_model/INPUT/central_bank_speech/" + embedder_name + "_embedding_" + tag + ".xlsx"
+    input_path = "/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/" + embedder_name + "_embedding_" + tag + ".xlsx"
     speeches_data = pd.read_excel(input_path)
     
     return speeches_data
@@ -231,7 +231,7 @@ def load_reference_data():
     
     #1.2 reference data
     dic_reference_data = {}
-    input_path_ref = "/Users/yjy/Documents/Github/KOL_model/INPUT/reference_tables/weight.xlsx"
+    input_path_ref = "/Users/jiayue.yuan/Documents/Github/KOL_model/INPUT/reference_tables/weight.xlsx"
     dic_reference_data["country_weight"] = pd.read_excel(input_path_ref, sheet_name="country")
     dic_reference_data["topic_list"] = pd.read_excel(input_path_ref, sheet_name="topic list")
     

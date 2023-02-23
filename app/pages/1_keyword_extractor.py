@@ -10,6 +10,7 @@ import pandas as pd
 from pandas import DataFrame
 import datetime as dt
 from keybert import KeyBERT
+#from sentence_transformers import SentenceTransformer
 # For Flair (Keybert)
 #from flair.embeddings import TransformerDocumentEmbeddings
 import seaborn as sns
@@ -50,8 +51,9 @@ def load_data(local_path):
     df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
     return df
 
-df = pd.read_csv("/Users/yjy/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv")
-
+df = pd.read_csv("/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv")
+#input_path = "/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv"
+#df = load_data(input_path)
 # Read in data from the Google Sheet.
 # @st.cache()
 # def load_data(sheets_url):
