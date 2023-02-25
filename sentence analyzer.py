@@ -14,6 +14,7 @@ nlp = spacy.load("en_core_web_sm")
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+tqdm(leave=True)
 tqdm.pandas()
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -41,8 +42,10 @@ from sentence_transformers import SentenceTransformer
 
 # embedder_name = 'multi-qa-mpnet-base-dot-v1' # heavy weight semantic search
 # embedder_name = 'multi-qa-MiniLM-L6-cos-v1' # light weight semantic search
-embedder_name = 'all-MiniLM-L6-v2' # light weight all-rounder
+# embedder_name = 'all-MiniLM-L6-v2' # light weight all-rounder
 # embedder_name = 'all-mpnet-base-v2' # heavy weight all-rounder
+embedder_name = 'msmarco-MiniLM-L6-cos-v5'
+
 
 def embedding(text):
     embedder = SentenceTransformer(embedder_name)

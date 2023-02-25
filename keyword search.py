@@ -24,6 +24,8 @@ work_dir = os.getcwd()
 # embedder_name = 'multi-qa-MiniLM-L6-cos-v1'
 # embedder_name = "all-MiniLM-L6-v2"
 embedder_name = 'all-mpnet-base-v2' # heavy weight all-rounder
+# embedder_name = 'sentence-t5-base'
+# embedder_name = 'msmarco-MiniLM-L6-cos-v5'
 
 # full or shortened text
 tag = "full"
@@ -31,6 +33,7 @@ tag = "full"
 # load data
 input_path_data = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/central_bank_speech/"+embedder_name+"_embedding_"+tag+".xlsx"
 speeches_data = pd.read_excel(input_path_data)
+speeches_data.dropna(inplace=True)
 input_path_ref = "/Users/jakewen/Desktop/Github/KOL_model/INPUT/reference_tables/weight.xlsx"
 reference_table_country = pd.read_excel(input_path_ref, sheet_name="country")
 
@@ -48,6 +51,7 @@ speeches_data['text_embedding'] = speeches_data['text_embedding'].apply(str2arra
 speeches_data.set_index('date', inplace=True)
 
 df_search_word = speeches_data.copy()
+df_search_word.index = pd.to_datetime(df_search_word.index)
 
 # re-create date series
 date_range = pd.date_range(start=df_search_word.index.min(), end=df_search_word.index.max())
@@ -94,8 +98,8 @@ effective_date_list = [
 # threshold levelcolorscales
 min_threshold = 0.10
 
-# scaling factor (default is 4)
-power = 4
+# scaling factor (default is 6)
+power = 3
 
 individual_plot = False
 summary_plot = True
@@ -173,20 +177,23 @@ for i in range(len(reference_table_topic_list)):
 print("main loop completed")
 
 df_output = df_output.groupby(level=0, axis=1).sum()
+
+df_summary_plot = df_output.iloc[:,1::2]
+df_summary_plot.columns = df_output.iloc[:,::2].columns
 #%% plot summary chart
 
 if summary_plot:
 
-    if len(df_output.columns) > 2:
+    if len(df_summary_plot.columns) > 2:
         n_col = 2
         width = n_col
-        height = np.ceil(len(df_output.columns)/n_col).astype(int)
+        height = np.ceil(len(df_summary_plot.columns)/n_col).astype(int)
         plt.rcParams["figure.figsize"] = (width*10,height*5)
         fig, ax = plt.subplots(nrows=height, ncols=width)
         
-        for i in range(len(df_output.columns)):
-            ax[int(i/n_col),i%n_col].plot(df_output.iloc[:,i])
-            ax[int(i/n_col),i%n_col].set_title(df_output.columns[i])
+        for i in range(len(df_summary_plot.columns)):
+            ax[int(i/n_col),i%n_col].plot(df_summary_plot.iloc[:,i])
+            ax[int(i/n_col),i%n_col].set_title(df_summary_plot.columns[i])
 
         plt.show()
     else:
@@ -212,10 +219,11 @@ fig.show()
 '''
 
 #%% Export
-df_output.to_excel("df_output.xlsx")
+# df_output.to_excel("df_output.xlsx")
 
 #%% Treemap
 
+'''
 df = df_output.iloc[:,1::2]
 df.columns = df_output.iloc[:,::2].columns
 
@@ -226,7 +234,7 @@ df_today = df_today.abs()
 
 # adjusted index with some time decay (testing)
 selection_list = [
-    ['1990-01-01', '2008-01-01', 5],
+    ['1990-01-01', '2008-01-01', 3],
     ['2008-01-01', '2018-01-01', 2],
     ['2018-01-01', '2023-01-01', 1],
     ]
@@ -237,14 +245,20 @@ for item in selection_list:
     df_temp = df_temp.iloc[::item[2], :]
     df_selected = pd.concat([df_selected, df_temp], axis=0)
 
+df_selected = df_selected.loc[(df_selected.index >= '2005-01-01')]
+
+# short-term momentum
+
 
 # 2 methods of calculating adjusted value
 
 # 1st method is to calculate relative percentage of min and max
-# df_adjusted = ((df_selected -df_selected.min())/(df_selected.max() - df_selected.min())).tail(1).T
+df_adjusted_0 = ((df_selected -df_selected.min())/(df_selected.max() - df_selected.min())).tail(1).T
 
 # 2nd method is to calculate the percentile of the last value
-df_adjusted = df_selected.rank(pct=True).tail(1).T
+df_adjusted_1 = df_selected.rank(pct=True).tail(1).T
+
+df_adjusted = (df_adjusted_0 + df_adjusted_1)/2
 
 df_result = pd.concat([df_today,df_adjusted],axis = 1)
 df_result.reset_index(inplace = True)
@@ -276,3 +290,7 @@ fig = px.treemap(df_result_final,
 
 fig.update_layout(font_size=20,font_family="sans-serif ",font_color="#444")
 fig.show()
+'''
+
+#%% Barchart
+
