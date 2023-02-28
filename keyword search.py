@@ -23,9 +23,9 @@ work_dir = os.getcwd()
 # embedder name
 # embedder_name = 'multi-qa-MiniLM-L6-cos-v1'
 # embedder_name = "all-MiniLM-L6-v2"
-embedder_name = 'all-mpnet-base-v2' # heavy weight all-rounder
+# embedder_name = 'all-mpnet-base-v2' # heavy weight all-rounder
 # embedder_name = 'sentence-t5-base'
-# embedder_name = 'msmarco-MiniLM-L6-cos-v5'
+embedder_name = 'msmarco-MiniLM-L6-cos-v5'
 
 # full or shortened text
 tag = "full"
