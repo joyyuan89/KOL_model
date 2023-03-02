@@ -8,6 +8,7 @@ Created on Wed Feb 22 17:14:22 2023
 
 import streamlit as st
 import pandas as pd
+import os
 
 st.set_page_config(
     page_title="more_info",
@@ -24,7 +25,10 @@ def load_data(local_path):
 
 #1.2 reference data
 dic_reference_data = {}
-input_path_ref = "/Users/jiayue.yuan/Documents/Github/KOL_model/INPUT/reference_tables/weight.xlsx"
+dic_reference_data = {}
+work_path = os.getcwd()
+parent_path = os.path.dirname(work_path)
+input_path_ref = os.path.join(parent_path, "INPUT/reference_tables/weight.xlsx")
 dic_reference_data["country_weight"] = pd.read_excel(input_path_ref, sheet_name="country")
 dic_reference_data["topic_list"] = pd.read_excel(input_path_ref, sheet_name="topic list")
 
@@ -38,4 +42,3 @@ st.dataframe(reference_table_topic_list)
 st.markdown("#### 📄 Country Weight")
 
 st.dataframe(reference_table_country)
-

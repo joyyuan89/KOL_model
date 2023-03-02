@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Feb 13 13:46:53 2023
+Created on Thu Mar  2 22:54:04 2023
 
-@author: jiayue.yuan
+@author: yjy
 """
-
-
-
 #%% streamlit
 import streamlit as st
+#from functionforDownloadButtons import download_button
 
 # data processing
 import pandas as pd
@@ -24,13 +22,14 @@ from numpy.linalg import norm
 # plot
 import matplotlib.pyplot as plt
 import plotly.express as px
+#pio.renderers.default = 'browser'
 
 # embedding
 from sentence_transformers import SentenceTransformer
 
 
 st.set_page_config(
-    page_title="Topic Trend Tracker",
+    page_title="Topic Searcher",
     page_icon="🎈",
     layout="wide",
 )
@@ -60,7 +59,7 @@ def adjust_value(value,power,min_threshold):
     return value
 
 # main loop
-def main_loop(search_word, search_word_group, polarity, df_search_word, date_range, power,min_threshold):
+def main_loop(search_word, search_word_group, polarity, df_search_word, date_range,power,min_threshold):
 
     # search word embedding
     search_word_embedding = embedding(search_word)
@@ -104,79 +103,6 @@ def main_loop(search_word, search_word_group, polarity, df_search_word, date_ran
     
     return df_merged, fig
 
-#%% Treemap
-def plot_treemap(df_output,eval_date,period_start, period_end):
-
-    df = df_output.iloc[:,1::2]
-    df.columns = df_output.iloc[:,::2].columns
-    
-    #convert df.index to dt.date
-    df.index = pd.to_datetime(df.index)
-    
-    # get today's value
-    df_today = df.loc[[eval_date]].T
-    #df_today = df.sort_index().tail(1).T
-    df_today = df_today.abs()
-    
-    # adjusted index (10 years from 2012-01-01)
-    period_start = dt.date(2012,1,1)
-    period_start = dt.date(2022,1,1)
-    
-    df_selected = df.loc[df.index >= str(period_start)]
-    df_selected = df.loc[df.index <= str(period_end)]
-
-    
-    df_adjusted = ((df_selected -df_selected.min())/(df_selected.max() - df_selected.min()))
-    df_adjusted_today = df_adjusted.loc[[eval_date]].T
-    df_result = pd.concat([df_today,df_adjusted_today],axis = 1)
-    df_result.reset_index(inplace = True)
-    df_result.columns = ["child topics", "value","adj_value"]
-    
-    parent_topics = reference_table_topic_list.drop_duplicates(subset="child topics")
-    df_result_final = pd.merge(df_result, 
-                          parent_topics, 
-                          on ='child topics', 
-                          how ='inner')
-    
-    # create a treemap of the data using Plotly
-    fig = px.treemap(df_result_final, 
-                     path=[px.Constant('Market topics'), 'parent topics', 'child topics'],
-                     values='value',
-                     color='adj_value', 
-                     #color_continuous_scale='RdBu_r',
-                      color_continuous_scale='oranges',
-                     hover_data={'value':':.2f', 'adj_value':':d'})
-    
-    # show the treemap
-    #fig.update_layout(margin = dict(t=50, l=25, r=25, b=25))
-    fig.update_layout(font_size=20,font_family="Open Sans",font_color="#444")
-    
-    return fig
-
-
-@st.cache_data
-def main_func(reference_table_topic_list,df_search_word, date_range, 
-              eval_date,period_start,period_end,
-              power,min_threshold):
-
-    df_output = pd.DataFrame()
-    dic_figs = {}
-    
-    for i in range(len(reference_table_topic_list)):
-        
-        search_word = reference_table_topic_list["child topics questions"][i]
-        search_word_group = reference_table_topic_list["child topics"][i]
-        polarity = reference_table_topic_list["polarity"][i]
-        df_merged, fig = main_loop(search_word, search_word_group, polarity, df_search_word, date_range) 
-        df_output = pd.concat([df_output, df_merged], axis=1)
-        dic_figs[search_word_group] = fig
-    
-    df_output = df_output.groupby(level=0, axis=1).sum()
-    
-    fig_treemap = plot_treemap(df_output,eval_date,period_start,period_end)
-    
-    return dic_figs,fig_treemap
-
 #%% load data 
 
 # Read in data from local.
@@ -204,7 +130,6 @@ def load_reference_data():
     dic_reference_data["topic_list"] = pd.read_excel(input_path_ref, sheet_name="topic list")
     
     return dic_reference_data
-
 # convert embedding string to array
 def str2array(s):
     # Remove space after [
@@ -236,15 +161,14 @@ effective_date_list = [
 
 #%% main page
 
-st.title(" 🎈 Topic Trend Tracker")
+st.title(" 🎈 Topic Searcher")
 st.header("")
 
 with st.expander("ℹ️ - About this page", expanded=True):
 
     st.write(
         """     
--   We collect a list of meaningful topics. This page shows you the trends of each topic and a treemap. 
--   In the sidebar, you can flexibly adjust topic search and treemap setting.
+-   Search any topic!
 	    """
     )
 
@@ -300,17 +224,25 @@ if button_load_data:
         data["df_search_word"] = df_search_word
         data["date_range"] = date_range
         
+        
         st.session_state["load_state"] = True
         
         st.success('Data loaded successfully :sunglasses: ')
     
     st.session_state["data"] = data
     
+# add session state
+
+#st.markdown("###### :green[_data loaded sucessfully_ :sunglasses:]")
 
 #%% 3. sidebar for adjustable parameters
 
 if st.session_state["load_state"]:
     
+    st.write("Please reload data if you open <topic trend tracker> before or you want to change the embedder")
+    
+    st.markdown("### 🟠 What topic do you want to search? ")
+    input_search_word = st.text_input(label = "input topic here: ")
     st.markdown("### 🟠 Adjust topic search and treemap settings in sidebar: ")
     
     with st.sidebar:
@@ -380,93 +312,35 @@ if st.session_state["load_state"]:
             #     st.stop()
             
             
-            button_cal = st.button(label="✨ Get me the result!")
-        # --- Initialising SessionState ---
-        
-    # if "cal_state" not in st.session_state:
-    #     st.session_state["cal_state"] = False
-    
-    if "cal_state" not in st.session_state:
-        st.session_state["cal_state"] = False
-        
-    if "dic_figs" not in st.session_state:
-        st.session_state["dic_figs"] = {}
-        
-    if "fig_treemap" not in st.session_state:
-        st.session_state["fig_treemap"] = {}
-    
-
+            button_cal = st.button(label="✨ Get me the result!")        
+          
+    #if button_cal or st.session_state["cal_state"]:
     if button_cal:
            
         data  = st.session_state["data"]
         
         speeches_data = data["speeches_data"]
-        reference_table_country = data["reference_table_country"]
         reference_table_topic_list = data["reference_table_topic_list"]
         df_search_word = data["df_search_word"]
         date_range = data["date_range"] 
                 
     
-#%% 4. main loop for topic searching
+    #%% 4. main loop for topic searching
             
         placeholder = st.empty()
         placeholder.text("Calculating......")
         #st.write("Caculating......")
         
-        dic_figs,fig_treemap = main_func(eval_date,period_start,period_end,power,min_threshold)
-        st.session_state["dic_figs"] = dic_figs
-        st.session_state["fig_treemap"] = fig_treemap 
         
-        st.session_state["cal_state"] = True
-        
+        search_word = input_search_word 
+        search_word_group = input_search_word
+        polarity = 1
+        df_merged, fig = main_loop(search_word, search_word_group, polarity, df_search_word, date_range, power,min_threshold) 
+      
         placeholder.empty()
-    
-#%% view plots
-    
-if st.session_state["load_state"] and st.session_state["cal_state"]:
-    st.markdown("##### 📈 View Topic Trends ")
-    
-    dic_figs = st.session_state["dic_figs"]
-    fig_treemap = st.session_state["fig_treemap"]
-    
-    ce, c1, ce, c2, ce = st.columns([0.2, 2, 0.2, 2, 0.2,])
-    
-    with c1:
-        topic1 = st.selectbox("select a topic",
-                              list(dic_figs.keys()),
-                              index = 0)
-        st.plotly_chart(dic_figs[topic1]) 
-        
-        
-    with c2:  
-        
-        topic2 = st.selectbox("select a topic",
-                              list(dic_figs.keys()),
-                              index = 1)
-        
-        st.plotly_chart(dic_figs[topic2]) 
-        
-    cf, c3, cf, c4, cf = st.columns([0.2, 2, 0.2, 2, 0.2,])
-    
-    with c3:
-        topic3 = st.selectbox("select a topic",
-                              list(dic_figs.keys()),
-                              index = 0)
-        st.plotly_chart(dic_figs[topic3]) 
-        
-       
-    with c4:  
-        
-        topic3 = st.selectbox("select a topic",
-                              list(dic_figs.keys()),
-                              index = 1)
-        
-        st.plotly_chart(dic_figs[topic3]) 
-           
-    st.markdown("#### 📊 View Topic Treemap ")
-        
-    fig_treemap.update_layout(width = 1000, height=800)
-    st.plotly_chart(fig_treemap,width = 1000, height=800)
+
+        st.plotly_chart(fig)
+
     
         
 
