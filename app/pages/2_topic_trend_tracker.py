@@ -289,21 +289,24 @@ st.markdown("### 🟠 Plase Choose an embedding model first: ")
 
 #with st.form(key="my_form1"):
     
-c1,c2 = st.columns([2,2])
+# c1,c2 = st.columns([2,2])
 
-with c1:
-    embedder_name = st.selectbox("Select embedder",
-                                 li_embedder_names)
+# with c1:
+#     embedder_name = st.selectbox("Select embedder",
+#                                  li_embedder_names)
     
-with c2:      
-    tag = st.selectbox("Select full or shortened text", li_tags)
+# with c2:      
+#     tag = st.selectbox("Select full or shortened text", li_tags)
     
-#button1 = st.form_submit_button(label="✨ Load data!")
+# #button1 = st.form_submit_button(label="✨ Load data!")
         
-    #if not submit_button1:
-        #st.stop()
+#     #if not submit_button1:
+#         #st.stop()
 
-#if st.button1('✨ Load data!'):
+# #if st.button1('✨ Load data!'):
+    
+embedder_name = "all-MiniLM-L6-v2"
+tag = "full"
             
 with st.spinner(text='Loading data'):
 
