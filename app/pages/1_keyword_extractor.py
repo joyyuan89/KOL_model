@@ -7,6 +7,7 @@ This is a temporary script file.
 import streamlit as st
 import numpy as np
 import pandas as pd
+import os
 from pandas import DataFrame
 import datetime as dt
 from keybert import KeyBERT
@@ -51,7 +52,12 @@ def load_data(local_path):
     df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
     return df
 
-df = pd.read_csv("/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv")
+work_path = os.getcwd()
+parent_path = os.path.dirname(work_path)
+input_path = os.path.join(parent_path, "INPUT/central_bank_speech/all_speeches.csv")
+df = pd.read_csv(input_path)
+
+
 #input_path = "/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv"
 #df = load_data(input_path)
 # Read in data from the Google Sheet.
