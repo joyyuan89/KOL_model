@@ -54,7 +54,7 @@ def cosine_similarity_function(vec_1, vec_2):
 #%% topic searching functions
 
 # adjust similarity value
-def adjust_value(value):
+def adjust_value(value,power,min_threshold):
     if value < min_threshold:
         value = 0
     value = value**power
@@ -69,7 +69,7 @@ def main_loop(search_word, search_word_group, polarity, df_search_word, date_ran
 
     # calculate cosine similarity between search word and articles
     df_search_word[search_word] = df_search_word["text_embedding"].apply(lambda x: cosine_similarity_function(x, search_word_embedding))
-    df_search_word[search_word] = df_search_word[search_word].apply(lambda x: adjust_value(x))
+    df_search_word[search_word] = df_search_word[search_word].apply(lambda x: adjust_value(x,power,min_threshold))
     df_search_word[search_word] = df_search_word[search_word]*df_search_word["country_weight"]
     
     # re-index to daily frequency and sum the values
@@ -207,11 +207,27 @@ def plot_treemap(df_output,eval_date,period_start, period_end):
     fig.update_layout(font_size=20,font_family="Open Sans",font_color="#444")
     
     return fig
- 
-    
-#fig = plot_treemap(df_output,"2022-11-10")
 
-#fig.show()
+@st.cache_data
+def main_func(eval_date,period_start,period_end,power,min_threshold):
+
+    df_output = pd.DataFrame()
+    dic_figs = {}
+    
+    for i in range(len(reference_table_topic_list)):
+        
+        search_word = reference_table_topic_list["child topics questions"][i]
+        search_word_group = reference_table_topic_list["child topics"][i]
+        polarity = reference_table_topic_list["polarity"][i]
+        df_merged, fig = main_loop(search_word, search_word_group, polarity, df_search_word, date_range) 
+        df_output = pd.concat([df_output, df_merged], axis=1)
+        dic_figs[search_word_group] = fig
+    
+    df_output = df_output.groupby(level=0, axis=1).sum()
+    
+    fig_treemap = plot_treemap(df_output,eval_date,period_start,period_end)
+    
+    return dic_figs,fig_treemap
 
 #%% load data 
 
@@ -354,6 +370,7 @@ with st.sidebar:
                 help=""" The min threshold of similarity between a speech and a topic when searching related speeches.
                 The higher the setting, the more speeches will be found related to specified topic.
                 """,
+                key="min_threhold"
             )
         
         # scaling factor
@@ -364,6 +381,7 @@ with st.sidebar:
                 max_value=10,
                 help=""" The power when scale the similarity.
                 The higher the setting, the greater the gap between high/low similarities will be magnified""",
+                key = "power"
             )
     
         
@@ -374,7 +392,8 @@ with st.sidebar:
                                   min_value= dt.date(2000,11,10), 
                                   max_value= dt.date(2022,11,10),
                                   help=""" To evaluate the market narratives on a specific date.
-                                  """,)
+                                  """,
+                                  key = "eval_date")
             
         # Caution : parameters conflicts(eval_date & period), min date in dataframe : 1990-11-28
         period_start = st.date_input("🗓Choose period start date",
@@ -382,14 +401,16 @@ with st.sidebar:
                                   min_value= dt.date(2000,11,10), 
                                   max_value= dt.date(2022,11,10),
                                   help=""" The start date of period.
-                                  """,)
+                                  """,
+                                  key = "period_start")
                                   
         period_end = st.date_input("🗓Choose period end date",
                                   value = dt.date(2022,11,10), # can change to Today() after go-live
                                   min_value= dt.date(2000,11,10), 
                                   max_value= dt.date(2022,11,10),
                                   help=""" The end date of period.
-                                  """,)
+                                  """,
+                                  key = "period_end")
                                   
         submit_button2 = st.form_submit_button(label="✨ Get me the result!")
         
@@ -406,22 +427,8 @@ placeholder = st.empty()
 placeholder.text("Calculating......")
 #st.write("Caculating......")
 
-df_output = pd.DataFrame()
-dic_figs = {}
-
-for i in range(len(reference_table_topic_list)):
-    
-    search_word = reference_table_topic_list["child topics questions"][i]
-    search_word_group = reference_table_topic_list["child topics"][i]
-    polarity = reference_table_topic_list["polarity"][i]
-    df_merged, fig = main_loop(search_word, search_word_group, polarity, df_search_word, date_range) 
-    df_output = pd.concat([df_output, df_merged], axis=1)
-    dic_figs[search_word_group] = fig
-
-df_output = df_output.groupby(level=0, axis=1).sum()
-
-
-fig_treemap = plot_treemap(df_output,eval_date,period_start,period_end)
+# add 
+dic_figs,fig_treemap = main_func(eval_date,period_start,period_end,power,min_threshold)
 
 placeholder.empty()
 
