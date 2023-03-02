@@ -123,27 +123,6 @@ def main_loop(search_word, search_word_group, polarity, df_search_word, date_ran
     
     return df_merged, fig
 
-#%% plot summary chart
-
-def plot_summary():
-    
-
-    if len(df_output.columns) > 2:
-        n_col = 2
-        width = n_col
-        height = np.ceil(len(df_output.columns)/n_col).astype(int)
-        plt.rcParams["figure.figsize"] = (width*10,height*5)
-        fig, ax = plt.subplots(nrows=height, ncols=width)
-        
-        for i in range(len(df_output.columns)):
-            ax[int(i/n_col),i%n_col].plot(df_output.iloc[:,i])
-            ax[int(i/n_col),i%n_col].set_title(df_output.columns[i])
-
-        
-    return fig
-
-        #plt.show()
-
 #%% Plotly
 
 # x = df_output.index
