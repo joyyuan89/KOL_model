@@ -455,7 +455,8 @@ if st.session_state["load_state"] and st.session_state["cal_state"]:
         topic1 = st.selectbox("select a topic",
                               list(dic_figs.keys()),
                               index = 0)
-        st.plotly_chart(dic_figs[topic1]) 
+        with st.container():
+            st.plotly_chart(dic_figs[topic1]) 
         
         
     with c2:  
@@ -464,7 +465,8 @@ if st.session_state["load_state"] and st.session_state["cal_state"]:
                               list(dic_figs.keys()),
                               index = 1)
         
-        st.plotly_chart(dic_figs[topic2]) 
+        with st.container():
+            st.plotly_chart(dic_figs[topic2]) 
         
     cf, c3, cf, c4, cf = st.columns([0.2, 2, 0.2, 2, 0.2,])
     
@@ -472,7 +474,9 @@ if st.session_state["load_state"] and st.session_state["cal_state"]:
         topic3 = st.selectbox("select a topic",
                               list(dic_figs.keys()),
                               index = 2)
-        st.plotly_chart(dic_figs[topic3]) 
+        
+        with st.container():
+            st.plotly_chart(dic_figs[topic3]) 
         
        
     with c4:  
@@ -481,7 +485,8 @@ if st.session_state["load_state"] and st.session_state["cal_state"]:
                               list(dic_figs.keys()),
                               index = 3)
         
-        st.plotly_chart(dic_figs[topic4]) 
+        with st.container():
+            st.plotly_chart(dic_figs[topic4]) 
            
     st.markdown("#### 📊 View Topic Treemap ")
         

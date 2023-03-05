@@ -254,7 +254,7 @@ if button_load_data:
 
 if st.session_state["load_state"]:
     
-    st.write("Please **reload** data if you loaded data in <topic trend tracker> before but you want to change the embedder")
+    st.write("Please **reload** data if you already loaded data in :blue[** Topic Trend Tracker **] but you want to change the embedder")
     
     st.markdown("### 🟠 What topic do you want to search? ")
     input_search_word = st.text_input(label = "input topic here: ")
