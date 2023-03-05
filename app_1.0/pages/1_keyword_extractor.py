@@ -5,20 +5,18 @@ Spyder Editor
 This is a temporary script file.
 """
 import streamlit as st
-import numpy as np
 import pandas as pd
-import os
 from pandas import DataFrame
-import datetime as dt
+import io
 from keybert import KeyBERT
-#from sentence_transformers import SentenceTransformer
-# For Flair (Keybert)
-#from flair.embeddings import TransformerDocumentEmbeddings
 import seaborn as sns
 # For download buttons
-from functionforDownloadButtons import download_button
-#import os
-#import json
+#from functionforDownloadButtons import download_button
+
+# google cloud data storage
+from google.oauth2 import service_account
+from google.cloud import storage
+
 
 st.set_page_config(
     page_title="BERT Keyword Extractor",
@@ -26,48 +24,26 @@ st.set_page_config(
     layout="wide",
 )
 
-
-def _max_width_():
-
-    st.markdown(
-        f"""
-        <style>
-        .reportview-container .main .block-container{{
-            max-width: 1400px;
-            }}
-        </style>    
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-_max_width_()
-
 #%% load data 
 
-# Read in data from local.
+# Create API client.
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"]
+)
+client = storage.Client(credentials=credentials)
+
+# Retrieve file contents.
 @st.cache_data
-def load_data(local_path):
-    df = pd.read_csv(local_path)
-    df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
-    return df
+def read_csv_file(bucket_name, file_path):
+    bucket = client.bucket(bucket_name)
+    csv_file_content = bucket.blob(file_path).download_as_string()
+    return csv_file_content
 
-work_path = os.getcwd()
-parent_path = os.path.dirname(work_path)
-input_path = os.path.join(parent_path, "INPUT/central_bank_speech/all_speeches.csv")
-df = pd.read_csv(input_path)
+bucket_name = "kol_model"
+file_path = "INPUT/central_bank_speech/all_speeches.csv"
+csv_data = read_csv_file(bucket_name, file_path)
 
-
-#input_path = "/Users/jiayue.yuan/Documents/GitHub/KOL_model/INPUT/central_bank_speech/all_speeches.csv"
-#df = load_data(input_path)
-# Read in data from the Google Sheet.
-# @st.cache()
-# def load_data(sheets_url):
-#     csv_url = sheets_url.replace("/edit#gid=", "/export?format=csv&gid=")
-#     return pd.read_csv(csv_url)
-
-#df = load_data(st.secrets["public_gsheets_url"])
-#df["date"] = pd.to_datetime(df["date"]).dt.strftime('%Y-%m-%d')
+df = pd.read_csv(io.StringIO(csv_data.decode('utf-8')))
 
 #%% select a speech
 
@@ -114,7 +90,8 @@ with st.expander("ℹ️ - About this page", expanded=True):
 
 st.markdown("")
 
-st.header("Title: " + title)
+st.markdown(f"## :blue[_Title: {title}_]")
+
 st.markdown(" ### 📌 View full text >>> ")
 
 with st.expander("📔 -full text", expanded=False):
@@ -245,18 +222,7 @@ keywords = kw_model.extract_keywords(
     diversity=Diversity,
 )
 
-st.markdown("#### 🎈 Check & download results")
-
-st.header("")
-
-cs, c1, c2, c3, cLast = st.columns([2, 1.5, 1.5, 1.5, 2])
-
-with c1:
-    CSVButton2 = download_button(keywords, "Data.csv", "📥 Download (.csv)")
-with c2:
-    CSVButton2 = download_button(keywords, "Data.txt", "📥 Download (.txt)")
-with c3:
-    CSVButton2 = download_button(keywords, "Data.json", "📥 Download (.json)")
+st.markdown("#### 🎈 Check results")
 
 st.header("")
 

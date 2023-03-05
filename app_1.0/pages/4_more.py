@@ -8,7 +8,9 @@ Created on Wed Feb 22 17:14:22 2023
 
 import streamlit as st
 import pandas as pd
-import os
+
+from google.oauth2 import service_account
+from google.cloud import storage
 
 st.set_page_config(
     page_title="more_info",
@@ -17,23 +19,28 @@ st.set_page_config(
 )
 
 
-@st.cache_data
-def load_data(local_path):
-    df = pd.read_csv(local_path)
-    return df
 
+# Create API client.
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"]
+)
+client = storage.Client(credentials=credentials)
 
-#1.2 reference data
-dic_reference_data = {}
-dic_reference_data = {}
-work_path = os.getcwd()
-parent_path = os.path.dirname(work_path)
-input_path_ref = os.path.join(parent_path, "INPUT/reference_tables/weight.xlsx")
-dic_reference_data["country_weight"] = pd.read_excel(input_path_ref, sheet_name="country")
-dic_reference_data["topic_list"] = pd.read_excel(input_path_ref, sheet_name="topic list")
+# Retrieve file contents.
+# Uses st.cache_data to only rerun when the query changes or after 10 min.
+@st.cache_data()
+def read_excel_file(bucket_name, file_path):
+    bucket = client.bucket(bucket_name)
+    excel_file_content = bucket.blob(file_path).download_as_bytes()
+    
+    return excel_file_content
 
-reference_table_country = dic_reference_data["country_weight"]
-reference_table_topic_list = dic_reference_data["topic_list"]
+bucket_name = "kol_model"
+file_path = "INPUT/reference_tables/weight.xlsx"
+file_content = read_excel_file(bucket_name, file_path)
+
+reference_table_country = pd.read_excel(file_content, sheet_name="country")
+reference_table_topic_list = pd.read_excel(file_content, sheet_name="topic list")
 
 st.markdown("#### 📄 Topic List")
 

@@ -19,6 +19,10 @@ import re
 import ast
 from numpy.linalg import norm
 
+
+from google.oauth2 import service_account
+from google.cloud import storage
+
 # plot
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -105,31 +109,42 @@ def main_loop(search_word, search_word_group, polarity, df_search_word, date_ran
 
 #%% load data 
 
-# Read in data from local.
+# Create API client.
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"]
+)
+client = storage.Client(credentials=credentials)
+
+# Retrieve file contents.
+def read_excel_file(bucket_name, file_path):
+    bucket = client.bucket(bucket_name)
+    excel_file_content = bucket.blob(file_path).download_as_bytes()
+    
+    return excel_file_content
+
 @st.cache_data
 def load_speeches_data(embedder_name,tag):
 
-    #1.1 speech data
-    #need to change to url(cloud adress)
-    work_path = os.getcwd()
-    parent_path = os.path.dirname(work_path)
-    input_path = parent_path + "/INPUT/central_bank_speech/" + embedder_name + "_embedding_" + tag + ".xlsx"
-    speeches_data = pd.read_excel(input_path)
+    bucket_name = "kol_model"
+    file_path = "INPUT/central_bank_speech/" + embedder_name + "_embedding_" + tag + ".xlsx"
+    file_content = read_excel_file(bucket_name, file_path)
+    speeches_data = pd.read_excel(file_content)
     
     return speeches_data
     
 @st.cache_data
 def load_reference_data():
+
+    bucket_name = "kol_model"
+    file_path= "INPUT/reference_tables/weight.xlsx"
+    file_content = read_excel_file(bucket_name, file_path)
     
-    #1.2 reference data
     dic_reference_data = {}
-    work_path = os.getcwd()
-    parent_path = os.path.dirname(work_path)
-    input_path_ref = os.path.join(parent_path, "INPUT/reference_tables/weight.xlsx")
-    dic_reference_data["country_weight"] = pd.read_excel(input_path_ref, sheet_name="country")
-    dic_reference_data["topic_list"] = pd.read_excel(input_path_ref, sheet_name="topic list")
+    dic_reference_data["country_weight"] = pd.read_excel(file_content, sheet_name="country")
+    dic_reference_data["topic_list"] = pd.read_excel(file_content, sheet_name="topic list")
     
     return dic_reference_data
+
 # convert embedding string to array
 def str2array(s):
     # Remove space after [
@@ -239,7 +254,7 @@ if button_load_data:
 
 if st.session_state["load_state"]:
     
-    st.write("Please reload data if you open <topic trend tracker> before or you want to change the embedder")
+    st.write("Please **reload** data if you loaded data in <topic trend tracker> before but you want to change the embedder")
     
     st.markdown("### 🟠 What topic do you want to search? ")
     input_search_word = st.text_input(label = "input topic here: ")

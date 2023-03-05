@@ -21,8 +21,11 @@ import re
 import ast
 from numpy.linalg import norm
 
+
+from google.oauth2 import service_account
+from google.cloud import storage
+
 # plot
-import matplotlib.pyplot as plt
 import plotly.express as px
 
 # embedding
@@ -167,7 +170,7 @@ def main_func(reference_table_topic_list,df_search_word, date_range,
         search_word = reference_table_topic_list["child topics questions"][i]
         search_word_group = reference_table_topic_list["child topics"][i]
         polarity = reference_table_topic_list["polarity"][i]
-        df_merged, fig = main_loop(search_word, search_word_group, polarity, df_search_word, date_range) 
+        df_merged, fig = main_loop(search_word, search_word_group, polarity, df_search_word, date_range, power, min_threshold) 
         df_output = pd.concat([df_output, df_merged], axis=1)
         dic_figs[search_word_group] = fig
     
@@ -179,32 +182,6 @@ def main_func(reference_table_topic_list,df_search_word, date_range,
 
 #%% load data 
 
-# Read in data from local.
-@st.cache_data
-def load_speeches_data(embedder_name,tag):
-
-    #1.1 speech data
-    #need to change to url(cloud adress)
-    work_path = os.getcwd()
-    parent_path = os.path.dirname(work_path)
-    input_path = parent_path + "/INPUT/central_bank_speech/" + embedder_name + "_embedding_" + tag + ".xlsx"
-    speeches_data = pd.read_excel(input_path)
-    
-    return speeches_data
-    
-@st.cache_data
-def load_reference_data():
-    
-    #1.2 reference data
-    dic_reference_data = {}
-    work_path = os.getcwd()
-    parent_path = os.path.dirname(work_path)
-    input_path_ref = os.path.join(parent_path, "INPUT/reference_tables/weight.xlsx")
-    dic_reference_data["country_weight"] = pd.read_excel(input_path_ref, sheet_name="country")
-    dic_reference_data["topic_list"] = pd.read_excel(input_path_ref, sheet_name="topic list")
-    
-    return dic_reference_data
-
 # convert embedding string to array
 def str2array(s):
     # Remove space after [
@@ -213,6 +190,42 @@ def str2array(s):
     s=re.sub('[,\s]+', ', ', s)
     return np.array(ast.literal_eval(s))
 
+
+# Create API client.
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"]
+)
+client = storage.Client(credentials=credentials)
+
+# Retrieve file contents.
+def read_excel_file(bucket_name, file_path):
+    bucket = client.bucket(bucket_name)
+    excel_file_content = bucket.blob(file_path).download_as_bytes()
+    
+    return excel_file_content
+
+@st.cache_data
+def load_speeches_data(embedder_name,tag):
+
+    bucket_name = "kol_model"
+    file_path = "INPUT/central_bank_speech/" + embedder_name + "_embedding_" + tag + ".xlsx"
+    file_content = read_excel_file(bucket_name, file_path)
+    speeches_data = pd.read_excel(file_content)
+    
+    return speeches_data
+    
+@st.cache_data
+def load_reference_data():
+
+    bucket_name = "kol_model"
+    file_path= "INPUT/reference_tables/weight.xlsx"
+    file_content = read_excel_file(bucket_name, file_path)
+    
+    dic_reference_data = {}
+    dic_reference_data["country_weight"] = pd.read_excel(file_content, sheet_name="country")
+    dic_reference_data["topic_list"] = pd.read_excel(file_content, sheet_name="topic list")
+    
+    return dic_reference_data
 
 #%%pre-defined variables
 
@@ -297,6 +310,7 @@ if button_load_data:
         
         data["speeches_data"] = speeches_data
         data["reference_table_topic_list"] = reference_table_topic_list
+        data["reference_table_country"] = reference_table_country
         data["df_search_word"] = df_search_word
         data["date_range"] = date_range
         
@@ -311,7 +325,10 @@ if button_load_data:
 
 if st.session_state["load_state"]:
     
-    st.markdown("### 🟠 Adjust topic search and treemap settings in sidebar: ")
+    st.markdown("### 🟠 Topic Trend and Treemap ")
+    
+    st.markdown("🔹 We already pre-defined a topic list (see the last page :blue[**_More_**] to view the list.) \
+                    Please adjust the topic search and treemap settings in the sidebar, and click the :blue[**_Get me the result_**] botton to view results!")
     
     with st.sidebar:
         
@@ -413,7 +430,10 @@ if st.session_state["load_state"]:
         placeholder.text("Calculating......")
         #st.write("Caculating......")
         
-        dic_figs,fig_treemap = main_func(eval_date,period_start,period_end,power,min_threshold)
+        dic_figs,fig_treemap = main_func(reference_table_topic_list,df_search_word, date_range,
+                                         eval_date,period_start,period_end,
+                                         power,min_threshold)
+        
         st.session_state["dic_figs"] = dic_figs
         st.session_state["fig_treemap"] = fig_treemap 
         
@@ -451,22 +471,27 @@ if st.session_state["load_state"] and st.session_state["cal_state"]:
     with c3:
         topic3 = st.selectbox("select a topic",
                               list(dic_figs.keys()),
-                              index = 0)
+                              index = 2)
         st.plotly_chart(dic_figs[topic3]) 
         
        
     with c4:  
         
-        topic3 = st.selectbox("select a topic",
+        topic4 = st.selectbox("select a topic",
                               list(dic_figs.keys()),
-                              index = 1)
+                              index = 3)
         
-        st.plotly_chart(dic_figs[topic3]) 
+        st.plotly_chart(dic_figs[topic4]) 
            
     st.markdown("#### 📊 View Topic Treemap ")
         
     fig_treemap.update_layout(width = 1000, height=800)
     st.plotly_chart(fig_treemap,width = 1000, height=800)
+    
+    
+
+    st.markdown("""#### 🔹 You can also search any topics in the next page>>>
+                """)
     
         
 
