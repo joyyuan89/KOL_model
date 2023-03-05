@@ -249,15 +249,15 @@ effective_date_list = [
 
 #%% main page
 
-st.title(" 🎈 Topic Trend Tracker")
+st.title(" 📈 Topic Trend Tracker")
 st.header("")
 
 with st.expander("ℹ️ - About this page", expanded=True):
 
     st.write(
         """     
--   We collect a list of meaningful topics. This page shows you the trends of each topic and a treemap. 
--   In the sidebar, you can flexibly adjust topic search and treemap setting.
+- We have collected a list of meaningful topics and created a tool to track their trends over time. 
+- On this page, you can explore the trends of each topic and view a treemap of all topics.
 	    """
     )
 
@@ -265,7 +265,7 @@ with st.expander("ℹ️ - About this page", expanded=True):
 
 st.markdown("")
 #%% load data
-st.markdown("### 🟠 Please choose an embedding model first: ")
+st.markdown("### 🟠 1. Specify the embedder and speech length and load data")
 
 c1,black,c2 = st.columns([2,1,2])
 
@@ -325,10 +325,10 @@ if button_load_data:
 
 if st.session_state["load_state"]:
     
-    st.markdown("### 🟠 Topic Trend and Treemap ")
+    st.markdown("### 🟠 2.Select the model parameters and calculate topic trends")
     
     st.markdown("🔹 We already pre-defined a topic list (see the last page :blue[**_More_**] to view the list.) \
-                    Please adjust the topic search and treemap settings in the sidebar, and click the :blue[**_Get me the result_**] botton to view results!")
+                    Please adjust the topic search, trend index calculation and treemap settings in the sidebar, and click the :blue[**_Get me the result_**] botton to view results!")
     
     with st.sidebar:
         
@@ -495,7 +495,7 @@ if st.session_state["load_state"] and st.session_state["cal_state"]:
     
     
 
-    st.markdown("""#### 🔹 You can also search any topics in the next page>>>
+    st.markdown("""##### 📌 You can also search any topics in the next page>>>
                 """)
     
         

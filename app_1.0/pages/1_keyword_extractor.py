@@ -81,8 +81,10 @@ with st.expander("ℹ️ - About this page", expanded=True):
 
     st.write(
         """     
--   This page allows you to deep dive into a speech from our central bank speech collection.
--   In the sidebar, you can select a speech by specifying country and date. The keyword extraction options can also be customized.
+- Select a speech from the central bank speeches collection by specifying country, speaker and date in the sidebar.
+- Customize your keyword extraction options based on your needs.
+- View the results to see the extracted keywords and their relevance to the speech.
+- Refine your analysis by adjusting the options and extracting keywords again.
 	    """
     )
 
@@ -90,9 +92,11 @@ with st.expander("ℹ️ - About this page", expanded=True):
 
 st.markdown("")
 
+st.markdown("### 🟠 1.Select a speech from the central bank speeches collection")
+
 st.markdown(f"## :blue[_Title: {title}_]")
 
-st.markdown(" ### 📌 View full text >>> ")
+st.markdown(" #### 📌 View full text >>> ")
 
 with st.expander("📔 -full text", expanded=False):
 
@@ -102,7 +106,8 @@ with st.expander("📔 -full text", expanded=False):
 #%% key word extractor
 
 st.markdown("")
-st.markdown(" ### 📌 Extract key words >>> ")
+st.markdown(" ### 🟠 2.Extract key words >>> ")
+st.markdown("Please select the parameters for keyword extraction. After you have selected your parameters, click on the :blue[**Get me the result**] button to view the results. ")
 
 with st.form(key="my_form"):
 
@@ -194,7 +199,7 @@ with st.form(key="my_form"):
 
         
 
-    submit_button = st.form_submit_button(label="✨ Get me the data!")
+    submit_button = st.form_submit_button(label="✨ Get me the result!")
 
     if use_MMR:
         mmr = True
@@ -222,7 +227,7 @@ keywords = kw_model.extract_keywords(
     diversity=Diversity,
 )
 
-st.markdown("#### 🎈 Check results")
+st.markdown(" ### 🟠 2.Check results >>> ")
 
 st.header("")
 

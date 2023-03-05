@@ -42,10 +42,30 @@ file_content = read_excel_file(bucket_name, file_path)
 reference_table_country = pd.read_excel(file_content, sheet_name="country")
 reference_table_topic_list = pd.read_excel(file_content, sheet_name="topic list")
 
+
+with st.expander("ℹ️ - About this page", expanded=True):
+
+    st.write(
+        """     
+        Thank you for using our app! We hope that you found the insights provided by our app valuable and informative.\
+        We are constantly working to refine and improve our methodology, and welcome feedback and suggestions from you!. \
+        Please find more details of our model below:
+	    """
+    )
+
+    st.markdown("")
+
+
 st.markdown("#### 📄 Topic List")
+st.markdown("This is the topic list we used in :blue[**Topic Trend Tracker**]")
 
 st.dataframe(reference_table_topic_list)
 
-st.markdown("#### 📄 Country Weight")
+st.markdown("#### 📄 Country Weights")
+st.markdown("We applied weighting approach to account for differences in central bank policies and priorities across countries, and ensures that the trend indices reflect the broader trends in the global financial landscape.")
 
 st.dataframe(reference_table_country)
+
+st.markdown("#### 📄 Time decay function")
+
+st.markdown("To be added...")
