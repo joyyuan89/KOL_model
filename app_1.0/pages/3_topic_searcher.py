@@ -254,10 +254,10 @@ if button_load_data:
 
 if st.session_state["load_state"]:
     
-    st.write("Please **reload** data if you already loaded data in :blue[** Topic Trend Tracker **] but you want to change the embedder")
+    st.write(" ❗️Please **RELOAD** data if you already loaded data in :blue[**_Topic Trend Tracker_**] but you want to change the embedder")
     
     st.markdown("### 🟠 What topic do you want to search? ")
-    input_search_word = st.text_input(label = "input topic here: ")
+    input_search_word = st.text_input(label = "Input topic here: ")
     st.markdown("### 🟠 Adjust topic search and treemap settings in sidebar: ")
     
     with st.sidebar:

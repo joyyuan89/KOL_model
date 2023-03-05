@@ -106,8 +106,8 @@ with st.expander("📔 -full text", expanded=False):
 #%% key word extractor
 
 st.markdown("")
-st.markdown(" ### 🟠 2.Extract key words >>> ")
-st.markdown("Please select the parameters for keyword extraction. After you have selected your parameters, click on the :blue[**Get me the result**] button to view the results. ")
+st.markdown(" ### 🟠 2.Extract key words ")
+st.markdown("Please select the parameters for keyword extraction. After you have selected your parameters, click on the :blue[**_Get me the result_**] button to view the results. ")
 
 with st.form(key="my_form"):
 
@@ -227,7 +227,7 @@ keywords = kw_model.extract_keywords(
     diversity=Diversity,
 )
 
-st.markdown(" ### 🟠 2.Check results >>> ")
+st.markdown(" ### 🟠 2.Check results ")
 
 st.header("")
 
