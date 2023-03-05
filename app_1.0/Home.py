@@ -53,32 +53,6 @@ st.markdown("### Part3. Topic Seacher")
 st.markdown("### Part4. More...")
 
 
-# test
 
-from google.oauth2 import service_account
-from google.cloud import storage
-import pandas as pd
-
-# Create API client.
-credentials = service_account.Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"]
-)
-client = storage.Client(credentials=credentials)
-
-# Retrieve file contents.
-# Uses st.cache_data to only rerun when the query changes or after 10 min.
-@st.cache_data()
-def read_file(bucket_name, file_path):
-    bucket = client.bucket(bucket_name)
-    file_content = bucket.blob(file_path).download_as_bytes()
-    df = pd.read_excel(file_content)
-    return df
-
-bucket_name = "kol_model"
-file_path = "INPUT/reference_tables/weight.xlsx"
-
-df = read_file(bucket_name, file_path)
-
-st.dataframe(df)
 
 
