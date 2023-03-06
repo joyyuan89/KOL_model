@@ -33,9 +33,9 @@ st.markdown("# Home Page 🎈")
 #1.introduction
 st.markdown("### 1.Introduction")
 st.markdown("""
-            Welcome to a description of an exciting project that is currently being developed. 
-            This project focuses on utilizing transformed based language models to scan and analyze text-based market information. 
-            The main objective of the project is to distill information and generate an information hierarchy for analysis.
+            Welcome to a description of an exciting project that is currently being developed.  
+            This project focuses on utilizing transformed based language models to scan and analyze text-based market information.  
+            The main objective of the project is to distill information and generate an information hierarchy for analysis. \n
             The project comprises of four distinct parts, each of which is integral to the overall success of the project. 
             - The first part involves the retrieval of central bank speeches, and analyzing the central bank speeches using keyword analysis to extract important pieces of information.
             - The second part involves tracking keyword trends over time, providing a valuable insight into how market sentiment and conditions change over time.
