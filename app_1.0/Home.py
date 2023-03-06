@@ -33,15 +33,15 @@ st.markdown("# Home Page 🎈")
 #1.introduction
 st.markdown("### 1.Introduction")
 st.markdown("""
-              Welcome to our cutting-edge Natural Language Processing (NLP) project app! 
+            Welcome to our cutting-edge Natural Language Processing (NLP) project app!  
             Our app is designed to scan and analyze text-based market information using the power of transformed-based language models. 
-            Our main objective is to distill information and generate an information hierarchy for analysis, which provides valuable insights to businesses and investors alike.\
-              We have leveraged the power of the BERT transformer method to analyze the speeches given by central bank officials. 
+            Our main objective is to distill information and generate an information hierarchy for analysis, which provides valuable insights to businesses and investors alike. \n
+            We have leveraged the power of the BERT transformer method to analyze the speeches given by central bank officials. 
             By extracting keywords from the speeches and tracing the popularity of meaningful topics over the years, we can analyze how central banks' priorities and concerns have evolved over time. 
-            This insight is invaluable for policymakers, economists, and researchers, who need to stay up-to-date with the latest developments in the financial markets.\
-              What sets our project apart is its user-friendliness. Anyone can customize the embedding model, adjust the searching parameters, and search for any topic they are interested in. 
-            The app provides a customized experience for every user, allowing them to gain deep insights into the trends and patterns of the financial markets.\
-              Overall, our NLP project app has the potential to revolutionize the way market information is analyzed. 
+            This insight is invaluable for policymakers, economists, and researchers, who need to stay up-to-date with the latest developments in the financial markets.\n
+            What sets our project apart is its user-friendliness. Anyone can customize the embedding model, adjust the searching parameters, and search for any topic they are interested in. 
+            The app provides a customized experience for every user, allowing them to gain deep insights into the trends and patterns of the financial markets.\n
+            Overall, our NLP project app has the potential to revolutionize the way market information is analyzed. 
             It provides a valuable tool for anyone interested in the financial markets, from investors to business owners. 
             With our app, you can gain a deeper understanding of the market trends and make informed decisions based on data-driven insights.
             

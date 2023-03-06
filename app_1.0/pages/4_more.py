@@ -47,9 +47,9 @@ with st.expander("ℹ️ - About this page", expanded=True):
 
     st.write(
         """     
-        Thank you for using our app! We hope that you found the insights provided by our app valuable and informative.\
-          We are constantly working to refine and improve our methodology, and welcome feedback and suggestions from you! \
-          Please find more details of our model below:
+        Thank you for using our app! We hope that you found the insights provided by our app valuable and informative.\n
+        We are constantly working to refine and improve our methodology, and welcome feedback and suggestions from you!  
+        Please find more details of our model below:
 	    """
     )
 
