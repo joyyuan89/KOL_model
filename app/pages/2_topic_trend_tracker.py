@@ -457,7 +457,7 @@ if st.session_state["load_state"] and st.session_state["cal_state"]:
        
     with c4:  
         
-        topic3 = st.selectbox("select a topic",
+        topic4 = st.selectbox("select a topic",
                               list(dic_figs.keys()),
                               index = 1)
         
