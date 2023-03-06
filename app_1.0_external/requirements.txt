@@ -1,0 +1,8 @@
+numpy==1.22.2
+pandas==1.5.2
+keybert==0.7.0
+sentence_transformers==2.2.2
+seaborn==0.12.2
+plotly==5.11.0
+google-cloud-storage==2.7.0
+openpyxl==3.0.10
