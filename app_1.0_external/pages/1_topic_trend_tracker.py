@@ -276,7 +276,7 @@ with st.expander("ℹ️ - About this page", expanded=True):
 
 st.markdown("")
 #%% load data
-st.markdown("### 🟠 1. Load data")
+st.markdown("### 🟠 1. Load Data")
 
 button_load = st.button(label="✨ Load data!", help="click the bottom to load data and caculate the results!")
 
@@ -324,12 +324,12 @@ if button_load:
         st.session_state["load_state"] = True
         
         st.success("""Data loaded successfully :sunglasses:  
-                   Now you can view the trends of a list of pre-defined topics in Step 2 or jump to Step3 to search your topic!
+                   Now you can view the trends of a list of pre-defined topics in :orange[Step 2] or jump to :orange[Step 3] to search your topic!
                    """)  
     
 #%% caculate pre-defined topics 
     
-st.markdown("### 🟠 2. View the trends of topics")
+st.markdown("### 🟠 2. View the Trends of Topics")
 
 if "cal_state" not in st.session_state:
     st.session_state["cal_state"] = False
@@ -343,8 +343,7 @@ if "fig_treemap" not in st.session_state:
 
 if st.session_state["load_state"]:
 
-    st.markdown("🔹 We already pre-defined a topic list (see the last page :blue[**_More_**] to view the list.) \
-            Please adjust the topic search, trend index calculation and treemap settings in the sidebar, and click the :blue[**_Get me the result_**] botton to view results!") 
+    st.markdown("🔹 We already pre-defined a topic list. Click the :blue[**_Get me the result_**] botton to view results!") 
     
     data = st.session_state["data"]
     speeches_data = data["speeches_data"]
@@ -417,15 +416,13 @@ if st.session_state["load_state"] and st.session_state["cal_state"]:
         with st.container():
             st.plotly_chart(dic_figs[topic4],use_container_width=True) 
            
-    st.markdown("#### 📊 View Topic Treemap")   
+    st.markdown("##### 📊 View Topic Treemap")   
         
     fig_treemap.update_layout(width = 1000, height=800)
     st.plotly_chart(fig_treemap,width = 1000, height=800)
-    
-    
 
 #%% user search
-st.markdown("### 🟠 3. Search any topics!")
+st.markdown("### 🟠 3. Search Any Topics!")
 
 if "user_cal_state" not in st.session_state:
     st.session_state["user_cal_state"] = False
@@ -433,13 +430,11 @@ if "user_cal_state" not in st.session_state:
 
 if st.session_state["load_state"]:
    
-    st.markdown("### 🔹 You can also search any topic you are intersted. ")
+    st.markdown("🔹 You can also search any topic you are intersted. The _topic_ can be a word, a phase, and even a sentence. ")
     input_search_word = st.text_input(label = "Input topic below and click :blue[**_get me the result_**] botton: ")
     
     button_cal_user = st.button(label="✨ Get me the results!", help="click the bottom to caculate the results!") 
-        
-          
-    #if button_cal or st.session_state["cal_state"]:
+
     if button_cal_user:
            
         data  = st.session_state["data"]
