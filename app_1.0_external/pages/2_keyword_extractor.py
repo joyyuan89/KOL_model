@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Spyder Editor
+Created on Mar 7
 
-This is a temporary script file.
+@author: jiayue.yuan
 """
+
 import streamlit as st
 import pandas as pd
 from pandas import DataFrame
@@ -19,10 +20,16 @@ from google.cloud import storage
 
 
 st.set_page_config(
-    page_title="BERT Keyword Extractor",
+    page_title="Keyword Extractor",
     page_icon="🎈",
     layout="wide",
 )
+
+#%% parameters
+ModelType = "all-MiniLM-L6-v2"
+StopWords = "english"
+mmr = True
+Diversity = 0.5
 
 #%% load data 
 
@@ -45,40 +52,19 @@ csv_data = read_csv_file(bucket_name, file_path)
 
 df = pd.read_csv(io.StringIO(csv_data.decode('utf-8')))
 
-#%% select a speech
+#%% load model
+@st.cache_resource()
+def load_model():
+    return KeyBERT(model="all-MiniLM-L6-v2")
 
-# Create a select box for the country column
-selected_country = st.sidebar.selectbox("Select country", df["country"].unique(), index = 7)
-# Filter the data based on the selected country
-filtered_df = df[df["country"] ==selected_country]
+kw_model = load_model()
 
-# Create a select box for the author column, only showing dates from the selected country
-selected_author = st.sidebar.selectbox("Select author", filtered_df["author"].unique())
-# Filter the data based on the selected country and author
-filtered_df = filtered_df[filtered_df["author"] == selected_author]
+#%% page intro
 
-
-# Create a select box for the date column, only showing dates from the selected country and author 
-selected_date = st.sidebar.selectbox("Select date", filtered_df.sort_values("date",ascending=False)["date"].unique())
-# Filter the data based on the selected date
-filtered_df = filtered_df[filtered_df["date"] == selected_date]
-
-# Get full text, title and keyword for selected speech
-doc = filtered_df["text"].values[0]
-title = filtered_df["title"].values[0]
-
-
-#%% display the speech
-
-
-# st.image("logo.png", width=400)
 st.title("🔑 BERT Keyword Extractor")
 st.header("")
 
-
-
 with st.expander("ℹ️ - About this page", expanded=True):
-
     st.write(
         """     
 - Select a speech from the central bank speeches collection by specifying country, speaker and date in the sidebar.
@@ -92,7 +78,31 @@ with st.expander("ℹ️ - About this page", expanded=True):
 
 st.markdown("")
 
+#%% select a speech
 st.markdown("### 🟠 1.Select a speech from the central bank speeches collection")
+
+c1,ce,c2,ce,c3 = 2,0.4,2,0.4,2
+
+with c1:
+    # select box for the country column
+    selected_country = st.sidebar.selectbox("Select country", df["country"].unique(), index = 7)
+    filtered_df = df[df["country"] ==selected_country]
+
+with c2:
+    # select box for the author column, only showing dates from the selected country
+    selected_author = st.sidebar.selectbox("Select author", filtered_df["author"].unique())
+    # Filter the data based on the selected country and author
+    filtered_df = filtered_df[filtered_df["author"] == selected_author]
+
+with c3:
+    # select box for the date column, only showing dates from the selected country and author 
+    selected_date = st.sidebar.selectbox("Select date", filtered_df.sort_values("date",ascending=False)["date"].unique())
+    # Filter the data based on the selected date
+    filtered_df = filtered_df[filtered_df["date"] == selected_date]
+
+# Get full text, title and keyword for selected speech
+doc = filtered_df["text"].values[0]
+title = filtered_df["title"].values[0]
 
 st.markdown(f"## :blue[_Title: {title}_]")
 
@@ -100,44 +110,24 @@ st.markdown(" #### 📌 View full text >>> ")
 
 with st.expander("📔 -full text", expanded=False):
 
-    st.markdown(doc)
-    
+    st.markdown(doc)   
    
 #%% key word extractor
 
 st.markdown("")
-st.markdown(" ### 🟠 2.Extract key words ")
-st.markdown("Please select the parameters for keyword extraction. After you have selected your parameters, click on the :blue[**_Get me the result_**] button to view the results. ")
+st.markdown(" ### 🟠 2.Extract keywords/keyphrases ")
+st.markdown(""" *Keyphrase_ngram_range* sets the length of the resulting keywords/keyphrases.
+            To extract keyphrases, simply set *keyphrase_ngram_range* to (1, 2) or higher depending on the number of words you would like in the resulting keyphrases.         
+            After you have selected your parameters, click on the :blue[**_Get me the result_**] button to view the results. 
+            """)
+
 
 with st.form(key="my_form"):
 
-
     ce, c1, ce, c2, ce, c3,ce = st.columns([0.07, 1, 0.07, 1, 0.07,1,0.07])
+
+    
     with c1:
-        
-        ModelType = st.radio(
-            "Choose your model",
-            ["all-MiniLM-L6-v2","distilbert-base-nli-mean-tokens"],
-            help="At present, you can choose between 2 pre_trained models to embed your text. More to come!",
-        )
-    
-        if ModelType == "all-MiniLM-L6-v2":
-            # kw_model = KeyBERT(model=roberta)
-    
-            @st.cache_resource()
-            def load_model():
-                return KeyBERT(model="all-MiniLM-L6-v2")
-    
-            kw_model = load_model()
-    
-        else:
-            @st.cache_resource()
-            def load_model():
-                return KeyBERT("distilbert-base-nli-mean-tokens")
-    
-            kw_model = load_model()
-    
-    with c2:
 
         top_N = st.slider(
             "Number of keywords",
@@ -146,70 +136,26 @@ with st.form(key="my_form"):
             value=10,
             help="You can choose the number of keywords/keyphrases to display. Between 1 and 30, default number is 10.",
         )
+    
+    with c2:
         
         min_Ngrams = st.number_input(
-            "Minimum Ngram",
+            "Min Ngram",
             min_value=1,
             max_value=4,
-            help="""The minimum value for the ngram range.
-    
-    *Keyphrase_ngram_range* sets the length of the resulting keywords/keyphrases.
-    
-    To extract keyphrases, simply set *keyphrase_ngram_range* to (1, 2) or higher depending on the number of words you would like in the resulting keyphrases.""",
-                # help="Minimum value for the keyphrase_ngram_range. keyphrase_ngram_range sets the length of the resulting keywords/keyphrases. To extract keyphrases, simply set keyphrase_ngram_range to (1, # 2) or higher depending on the number of words you would like in the resulting keyphrases.",
+            help="The minimum value for the keyphrase_ngram_range."
         )
     
+    with c3:
+    
         max_Ngrams = st.number_input(
-            "Maximum Ngram",
+            "Max Ngram",
             value=2,
             min_value=1,
             max_value=4,
-            help="""The maximum value for the keyphrase_ngram_range.
-    
-    *Keyphrase_ngram_range* sets the length of the resulting keywords/keyphrases.
-    
-    To extract keyphrases, simply set *keyphrase_ngram_range* to (1, 2) or higher depending on the number of words you would like in the resulting keyphrases.""",
-        )
-        
-    with c3:
-
-        StopWordsCheckbox = st.checkbox(
-            "Remove stop words",
-            help="Tick this box to remove stop words from the document (currently English only)",
-        )
-    
-        use_MMR = st.checkbox(
-            "Use MMR",
-            value=True,
-            help="You can use Maximal Margin Relevance (MMR) to diversify the results. It creates keywords/keyphrases based on cosine similarity. Try high/low 'Diversity' settings below for interesting variations.",
-        )
-    
-        Diversity = st.slider(
-            "Keyword diversity (MMR only)",
-            value=0.5,
-            min_value=0.0,
-            max_value=1.0,
-            step=0.1,
-            help="""The higher the setting, the more diverse the keywords.
-            
-    Note that the *Keyword diversity* slider only works if the *MMR* checkbox is ticked.
-    
-    """,
-        )
-
-        
+            help="The maximum value for the keyphrase_ngram_range.")
 
     submit_button = st.form_submit_button(label="✨ Get me the result!")
-
-    if use_MMR:
-        mmr = True
-    else:
-        mmr = False
-
-    if StopWordsCheckbox:
-        StopWords = "english"
-    else:
-        StopWords = None
 
 if not submit_button:
     st.stop()
@@ -227,7 +173,7 @@ keywords = kw_model.extract_keywords(
     diversity=Diversity,
 )
 
-st.markdown(" ### 🟠 2.Check results ")
+#%% check results
 
 st.header("")
 
@@ -249,7 +195,7 @@ df = df.style.background_gradient(
     ],
 )
 
-c1, c2, c3 = st.columns([1, 3, 1])
+c1, c2, c3 = st.columns([1, 4, 1])
 
 format_dictionary = {
     "Relevancy": "{:.1%}",

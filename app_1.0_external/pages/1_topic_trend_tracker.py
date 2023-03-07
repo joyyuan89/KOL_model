@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Feb 13 13:46:53 2023
+Created on Mar 7
 
 @author: jiayue.yuan
 """
-
-
 
 #%% streamlit
 import streamlit as st
