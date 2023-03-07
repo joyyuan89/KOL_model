@@ -229,9 +229,14 @@ def load_reference_data():
 
 #%%pre-defined variables
 
-li_embedder_names = ["all-MiniLM-L6-v2",'all-mpnet-base-v2']
-li_tags = ["full","shortened"]
+embedder_name = "all-MiniLM-L6-v2"
+tag = "full"
 
+# scaling factor
+power = 6
+
+# threshold
+min_threshold = 0.1
 
 # time decay (to replace with functions later)
 effective_date_list = [
@@ -246,6 +251,12 @@ effective_date_list = [
     [270,0.10],
     [360,0.10],
     ]
+
+#treemap
+    
+eval_date = dt.date(2022,11,10) # can change to Today() 
+period_end = eval_date
+period_start = dt.date(2012,11,10)
 
 #%% main page
 
@@ -265,17 +276,10 @@ with st.expander("ℹ️ - About this page", expanded=True):
 
 st.markdown("")
 #%% load data
-st.markdown("### 🟠 1. Specify the embedder and speech length and load data")
+st.markdown("### 🟠 1. Load data")
 
-c1,black,c2 = st.columns([2,1,2])
+button_load = st.button(label="✨ Load data!", help="click the bottom to load data and caculate the results!")
 
-with c1:
-    embedder_name = st.selectbox("Select embedder",li_embedder_names)
-    
-with c2:      
-    tag = st.selectbox("Select full or shortened text", li_tags)
-    
-button_load_data = st.button(label="✨ Load data!", help="click the bottom when embedder and tag change")
 # --- Initialising SessionState ---
 if "load_state" not in st.session_state:
      st.session_state["load_state"] = False
@@ -283,8 +287,10 @@ if "load_state" not in st.session_state:
 if "data" not in st.session_state:
     st.session_state["data"] = {}
 
-       
-if button_load_data:
+      
+if button_load:
+    
+    #Step1: load data
             
     with st.spinner(text='Loading data'):
         
@@ -320,130 +326,48 @@ if button_load_data:
     
     st.session_state["data"] = data
     
-
-#%% 3. sidebar for adjustable parameters
-
-if st.session_state["load_state"]:
+#%% caculate pre-defined topics 
     
-    st.markdown("### 🟠 2.Select the model parameters and calculate topic trends")
+st.markdown("### 🟠 2. View the trends of topics")
+st.markdown("🔹 We already pre-defined a topic list (see the last page :blue[**_More_**] to view the list.) \
+            Please adjust the topic search, trend index calculation and treemap settings in the sidebar, and click the :blue[**_Get me the result_**] botton to view results!")
+ 
+button_cal = st.button(label="✨ get me the results!", help="click the bottom to caculate the results!")  
     
-    st.markdown("🔹 We already pre-defined a topic list (see the last page :blue[**_More_**] to view the list.) \
-                    Please adjust the topic search, trend index calculation and treemap settings in the sidebar, and click the :blue[**_Get me the result_**] botton to view results!")
+if "cal_state" not in st.session_state:
+    st.session_state["cal_state"] = False
     
-    with st.sidebar:
-        
-        #with st.form(key="my_form2"):
-        
-            st.write("#### 🔸Topic search setting")
-        
-            # threshold levelcolorscales
-            min_threshold = st.slider(
-                    "Min threshold",
-                    value=0.1,
-                    min_value=0.1,
-                    max_value=0.9,
-                    step=0.1,
-                    help=""" The min threshold of similarity between a speech and a topic when searching related speeches.
-                    The higher the setting, the more speeches will be found related to specified topic.
-                    """,
-                    key="min_threhold"
-                )
-            
-            # scaling factor
-            power = st.number_input(
-                    "Power",
-                    value=6,
-                    min_value=1,
-                    max_value=10,
-                    help=""" The power when scale the similarity.
-                    The higher the setting, the greater the gap between high/low similarities will be magnified""",
-                    key = "power"
-                )
-            
-            st.write("#### 🔸Treemap setting: ") 
-            #evaluation date
-            eval_date = st.date_input("🗓Choose evaluation date",
-                                      value = dt.date(2022,11,10), # can change to Today() after go-live
-                                      min_value= dt.date(2000,11,10), 
-                                      max_value= dt.date(2022,11,10),
-                                      help=""" To evaluate the market narratives on a specific date.
-                                      """,
-                                      key = "eval_date")
-                
-            # Caution : parameters conflicts(eval_date & period), min date in dataframe : 1990-11-28
-            period_start = st.date_input("🗓Choose period start date",
-                                      value = dt.date(2012,11,10), # can change to Today() after go-live
-                                      min_value= dt.date(2000,11,10), 
-                                      max_value= dt.date(2022,11,10),
-                                      help=""" The start date of period.
-                                      """,
-                                      key = "period_start")
-                                      
-            period_end = st.date_input("🗓Choose period end date",
-                                      value = dt.date(2022,11,10), # can change to Today() after go-live
-                                      min_value= dt.date(2000,11,10), 
-                                      max_value= dt.date(2022,11,10),
-                                      help=""" The end date of period.
-                                      """,
-                                      key = "period_end")
-                                      
-            #submit_button2 = st.form_submit_button(label="✨ Get me the result!")
-            
-            # if not submit_button2:
-            #     st.stop() 
-     
-            # if period_start > period_end:
-            #     st.warning(" period end date can't be earlier than period start date")
-            #     st.stop()
-            
-            
-            button_cal = st.button(label="✨ Get me the result!")
-        # --- Initialising SessionState ---
-        
-    # if "cal_state" not in st.session_state:
-    #     st.session_state["cal_state"] = False
+if "dic_figs" not in st.session_state:
+    st.session_state["dic_figs"] = {}
     
-    if "cal_state" not in st.session_state:
-        st.session_state["cal_state"] = False
-        
-    if "dic_figs" not in st.session_state:
-        st.session_state["dic_figs"] = {}
-        
-    if "fig_treemap" not in st.session_state:
-        st.session_state["fig_treemap"] = {}
+if "fig_treemap" not in st.session_state:
+    st.session_state["fig_treemap"] = {}
     
-
-    if button_cal:
-           
-        data  = st.session_state["data"]
-        
-        speeches_data = data["speeches_data"]
-        reference_table_country = data["reference_table_country"]
-        reference_table_topic_list = data["reference_table_topic_list"]
-        df_search_word = data["df_search_word"]
-        date_range = data["date_range"] 
-                
+ 
+    speeches_data = data["speeches_data"]
+    reference_table_country = data["reference_table_country"]
+    reference_table_topic_list = data["reference_table_topic_list"]
+    df_search_word = data["df_search_word"]
+    date_range = data["date_range"] 
     
-#%% 4. main loop for topic searching
-            
-        placeholder = st.empty()
-        placeholder.text("Calculating......")
-        #st.write("Caculating......")
-        
+if button_cal:  
+    #Step1: load data  
+    with st.spinner(text='Caculating...'):
+          
         dic_figs,fig_treemap = main_func(reference_table_topic_list,df_search_word, date_range,
                                          eval_date,period_start,period_end,
                                          power,min_threshold)
         
         st.session_state["dic_figs"] = dic_figs
         st.session_state["fig_treemap"] = fig_treemap 
-        
+
         st.session_state["cal_state"] = True
-        
-        placeholder.empty()
+        st.success('Caculation successfully :sunglasses: ')
     
 #%% view plots
     
 if st.session_state["load_state"] and st.session_state["cal_state"]:
+    
     st.markdown("##### 📈 View Topic Trends ")
     
     dic_figs = st.session_state["dic_figs"]
@@ -488,16 +412,44 @@ if st.session_state["load_state"] and st.session_state["cal_state"]:
         with st.container():
             st.plotly_chart(dic_figs[topic4],use_container_width=True) 
            
-    st.markdown("#### 📊 View Topic Treemap ")
+    st.markdown("#### 📊 View Topic Treemap")   
         
     fig_treemap.update_layout(width = 1000, height=800)
     st.plotly_chart(fig_treemap,width = 1000, height=800)
     
     
 
-    st.markdown("""##### 📌 You can also search any topics in the next page>>>
-                """)
+#%% user search
+st.markdown("### 🟠 3. Search any topics!")
+
+if "user_cal_state" not in st.session_state:
+    st.session_state["user_cal_state"] = False
+
+
+if st.session_state["load_state"]:
+   
+    st.markdown("### 🟠 What topic do you want to search? ")
+    input_search_word = st.text_input(label = "Input topic here: ")
     
+    button_cal_user = st.button(label="✨ Get me the results!", help="click the bottom to caculate the results!") 
+        
+          
+    #if button_cal or st.session_state["cal_state"]:
+    if button_cal_user:
+           
+        data  = st.session_state["data"]
+        
+        speeches_data = data["speeches_data"]
+        reference_table_topic_list = data["reference_table_topic_list"]
+        df_search_word = data["df_search_word"]
+        date_range = data["date_range"] 
+       
+        search_word = input_search_word 
+        search_word_group = input_search_word
+        polarity = 1
+        df_merged, fig = main_loop(search_word, search_word_group, polarity, df_search_word, date_range, power,min_threshold) 
+        st.plotly_chart(fig)
+
         
 
 
