@@ -346,6 +346,7 @@ if st.session_state["load_state"]:
     st.markdown("🔹 We already pre-defined a topic list (see the last page :blue[**_More_**] to view the list.) \
             Please adjust the topic search, trend index calculation and treemap settings in the sidebar, and click the :blue[**_Get me the result_**] botton to view results!") 
     
+    data = st.session_state["data"]
     speeches_data = data["speeches_data"]
     reference_table_country = data["reference_table_country"]
     reference_table_topic_list = data["reference_table_topic_list"]
