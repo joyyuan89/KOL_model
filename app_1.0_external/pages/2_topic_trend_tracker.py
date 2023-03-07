@@ -329,11 +329,7 @@ if button_load:
 #%% caculate pre-defined topics 
     
 st.markdown("### 🟠 2. View the trends of topics")
-st.markdown("🔹 We already pre-defined a topic list (see the last page :blue[**_More_**] to view the list.) \
-            Please adjust the topic search, trend index calculation and treemap settings in the sidebar, and click the :blue[**_Get me the result_**] botton to view results!")
- 
-button_cal = st.button(label="✨ get me the results!", help="click the bottom to caculate the results!")  
-    
+
 if "cal_state" not in st.session_state:
     st.session_state["cal_state"] = False
     
@@ -342,28 +338,35 @@ if "dic_figs" not in st.session_state:
     
 if "fig_treemap" not in st.session_state:
     st.session_state["fig_treemap"] = {}
+
+
+if st.session_state["load_state"]:
+
+    st.markdown("🔹 We already pre-defined a topic list (see the last page :blue[**_More_**] to view the list.) \
+            Please adjust the topic search, trend index calculation and treemap settings in the sidebar, and click the :blue[**_Get me the result_**] botton to view results!") 
     
- 
     speeches_data = data["speeches_data"]
     reference_table_country = data["reference_table_country"]
     reference_table_topic_list = data["reference_table_topic_list"]
     df_search_word = data["df_search_word"]
     date_range = data["date_range"] 
     
-if button_cal:  
-    #Step1: load data  
-    with st.spinner(text='Caculating...'):
+    button_cal = st.button(label="✨ get me the results!", help="click the bottom to caculate the results!") 
+    
+    if button_cal:  
+        #Step1: load data  
+        with st.spinner(text='Caculating...'):
           
-        dic_figs,fig_treemap = main_func(reference_table_topic_list,df_search_word, date_range,
+            dic_figs,fig_treemap = main_func(reference_table_topic_list,df_search_word, date_range,
                                          eval_date,period_start,period_end,
                                          power,min_threshold)
         
-        st.session_state["dic_figs"] = dic_figs
-        st.session_state["fig_treemap"] = fig_treemap 
-
-        st.session_state["cal_state"] = True
-        st.success('Caculation successfully :sunglasses: ')
+            st.session_state["dic_figs"] = dic_figs
+            st.session_state["fig_treemap"] = fig_treemap 
     
+            st.session_state["cal_state"] = True
+            st.success('Caculation successfully :sunglasses: ')
+        
 #%% view plots
     
 if st.session_state["load_state"] and st.session_state["cal_state"]:
