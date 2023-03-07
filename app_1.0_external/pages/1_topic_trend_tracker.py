@@ -414,10 +414,12 @@ if st.session_state["load_state"] and st.session_state["cal_state"]:
         with st.container():
             st.plotly_chart(dic_figs[topic4],use_container_width=True) 
            
-    st.markdown("##### 📊 View Topic Treemap")   
-        
-    fig_treemap.update_layout(width = 1000, height=800)
-    st.plotly_chart(fig_treemap,width = 1000, height=800)
+    st.markdown("##### 📊 View Topic Treemap")  
+    
+    with st.container():
+        #fig_treemap.update_layout(width = 1000, height=800)
+        #st.plotly_chart(fig_treemap,width = 1000, height=800)
+        st.plotly_chart(fig_treemap,use_container_width=True) 
 
 #%% user search
 st.markdown("### 🟠 3. Search Any Topics!")
@@ -446,7 +448,9 @@ if st.session_state["load_state"]:
         search_word_group = input_search_word
         polarity = 1
         df_merged, fig = main_loop(search_word, search_word_group, polarity, df_search_word, date_range, power,min_threshold) 
-        st.plotly_chart(fig)
+        
+        with st.container():
+            st.plotly_chart(fig)
 
         
 

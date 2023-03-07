@@ -84,19 +84,19 @@ st.markdown("### 🟠 1.Select a speech from the central bank speeches collectio
 c1,ce,c2,ce,c3 = 2,0.4,2,0.4,2
 
 with c1:
-    # select box for the country column
-    selected_country = st.sidebar.selectbox("Select country", df["country"].unique(), index = 7)
+    #select box for countries
+    selected_country = st.selectbox("Select country", df["country"].unique(), index = 7)
     filtered_df = df[df["country"] ==selected_country]
 
 with c2:
     # select box for the author column, only showing dates from the selected country
-    selected_author = st.sidebar.selectbox("Select author", filtered_df["author"].unique())
+    selected_author = st.selectbox("Select author", filtered_df["author"].unique())
     # Filter the data based on the selected country and author
     filtered_df = filtered_df[filtered_df["author"] == selected_author]
 
 with c3:
     # select box for the date column, only showing dates from the selected country and author 
-    selected_date = st.sidebar.selectbox("Select date", filtered_df.sort_values("date",ascending=False)["date"].unique())
+    selected_date = st.selectbox("Select date", filtered_df.sort_values("date",ascending=False)["date"].unique())
     # Filter the data based on the selected date
     filtered_df = filtered_df[filtered_df["date"] == selected_date]
 
