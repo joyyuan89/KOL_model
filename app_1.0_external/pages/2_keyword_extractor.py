@@ -81,7 +81,7 @@ st.markdown("")
 #%% select a speech
 st.markdown("### 🟠 1.Select a speech from the central bank speeches collection")
 
-c1,ce,c2,ce,c3 = st.columns([1, 0.01, 1, 0.01, 1])
+ce, c1, ce, c2, ce, c3,ce = st.columns([0.07, 1, 0.07, 1, 0.07,1,0.07])
 
 with c1:
     #select box for countries
