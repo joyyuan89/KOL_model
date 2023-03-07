@@ -320,13 +320,12 @@ if button_load:
         data["df_search_word"] = df_search_word
         data["date_range"] = date_range
         
+        st.session_state["data"] = data      
         st.session_state["load_state"] = True
         
         st.success("""Data loaded successfully :sunglasses:  
                    Now you can view the trends of a list of pre-defined topics in Step 2 or jump to Step3 to search your topic!
-                   """)
-    
-    st.session_state["data"] = data
+                   """)  
     
 #%% caculate pre-defined topics 
     
