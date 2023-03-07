@@ -116,12 +116,10 @@ with st.expander("📔 -full text", expanded=False):
 
 st.markdown("")
 st.markdown(" ### 🟠 2.Extract keywords/keyphrases ")
-st.markdown(""" *Keyphrase_ngram_range* sets the length of the resulting keywords/keyphrases.
-            To extract keyphrases, simply set *keyphrase_ngram_range* to (1, 2) or higher depending on the number of words you would like in the resulting keyphrases.         
-            After you have selected your parameters, click on the :blue[**_Get me the result_**] button to view the results. 
+st.markdown(""" Selected parameters, and click the :blue[**_Get me the result_**] button to view the results.  
+            :blue[**Keyphrase ngram range**] sets the length of the resulting keywords/keyphrases.
             """)
-
-
+            
 with st.form(key="my_form"):
 
     ce, c1, ce, c2, ce, c3,ce = st.columns([0.07, 1, 0.07, 1, 0.07,1,0.07])
@@ -130,7 +128,7 @@ with st.form(key="my_form"):
     with c1:
 
         top_N = st.slider(
-            "Number of keywords",
+            "Number of Keyword/Keyphrase",
             min_value=1,
             max_value=30,
             value=10,
