@@ -322,7 +322,9 @@ if button_load:
         
         st.session_state["load_state"] = True
         
-        st.success('Data loaded successfully :sunglasses: ')
+        st.success("""Data loaded successfully :sunglasses:  
+                   Now you can view the trends of a list of pre-defined topics in Step 2 or jump to Step3 to search your topic!
+                   """)
     
     st.session_state["data"] = data
     
@@ -431,8 +433,8 @@ if "user_cal_state" not in st.session_state:
 
 if st.session_state["load_state"]:
    
-    st.markdown("### 🟠 What topic do you want to search? ")
-    input_search_word = st.text_input(label = "Input topic here: ")
+    st.markdown("### 🔹 You can also search any topic you are intersted. ")
+    input_search_word = st.text_input(label = "Input topic below and click :blue[**_get me the result_**] botton: ")
     
     button_cal_user = st.button(label="✨ Get me the results!", help="click the bottom to caculate the results!") 
         
