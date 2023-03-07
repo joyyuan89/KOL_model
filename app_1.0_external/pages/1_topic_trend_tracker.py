@@ -419,11 +419,11 @@ if st.session_state["load_state"] and st.session_state["cal_state"]:
     cl, cc, cr = st.columns([0.5, 4, 0.5])
 
     with cc:
-        st.plotly_chart(fig_treemap)
+        with st.container():
+            st.plotly_chart(fig_treemap,use_container_width=True)
    
         #fig_treemap.update_layout(width = 1000, height=800)
         #st.plotly_chart(fig_treemap,width = 1000, height=800)
-
 
 #%% user search
 st.markdown("### 🟠 3. Search Any Topics!")
@@ -436,7 +436,6 @@ if st.session_state["load_state"]:
    
     st.markdown("🔹 You can also search any topic you are intersted. The _topic_ can be a word, a phase, and even a sentence. ")
     input_search_word = st.text_input(label = "Input topic below and click :blue[**_get me the result_**] botton: ")
-    
     button_cal_user = st.button(label="✨ Get me the results!", help="click the bottom to caculate the results!") 
 
     if button_cal_user:
@@ -453,10 +452,11 @@ if st.session_state["load_state"]:
         polarity = 1
         df_merged, fig = main_loop(search_word, search_word_group, polarity, df_search_word, date_range, power,min_threshold) 
         
-        cl, cc, cr = st.columns([0.5, 4, 0.5])
+        cl, cc, cr = st.columns([0.1, 4, 0.1])
 
         with cc:
-            st.plotly_chart(fig)
+            with st.container():
+                st.plotly_chart(fig,use_container_width=True)
 
         
 
